@@ -62,7 +62,7 @@ Koostatud 30.10.2026 (tööplaani ülesanne 6). Üksikasjalikud kaardistused on 
 
 ## Etapp 2 tulemus (30.10.2026, mootor 2.0.0)
 
-Kõik otsused E1–E8 ja E10 on mootoris. E9 (planeeringukontrolli väljad) jääb etappi 3, sest see muudab planeeringukontrolli rakendust.
+Kõik otsused E1–E8 ja E10 on mootoris. E9 tehti etapi 3 alguses planeeringukontrollis (versioon 33): väli `meta.moju` = {eramu, ridaelamu, korter, asula, ehak, start, years}.
 
 | Otsus | Kuidas mootoris | Kontroll |
 |---|---|---|
