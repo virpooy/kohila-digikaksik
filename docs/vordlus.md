@@ -45,6 +45,11 @@ Koostatud 30.10.2026 (tööplaani ülesanne 6). Üksikasjalikud kaardistused on 
 | E7 | Kohtade arv | KAM 520 / 1 010 (hinnang); RAK 470 lasteaiakohta; KEM praegune laste arv | Valla andmed (ülesanne 15); seni RAK 470 ja KAM 1 010 |
 | E8 | Investeeringu hind | KEM 30 000 / 25 000 € koha kohta; MÕJ 150 000 € rühma kohta (kasutamata) | KEM väärtused, avatud parameetrina |
 | E9 | Planeeringukontrolli ühendus | PK-s pole arvulisi välju | Lisada PK-sse: eluruumid tüübi järgi, asula (EHAK), valmimisaasta |
+| E10 | Võlg ja eelarve | KAM: võlg väheneb 9% aastas ilma makseta, intressi pole, laen ainult omaosaluse puudujäägil; tasandusfond reageerib nominaalsele maksutulule (vt `kaardistus/kohila-arengumudel-vastuolud.md`) | Kaksik võtab võla, laenud ja investeeringud eelarvestrateegiast, arvestab tegelikku tagasimakset ja intressi; tasandusfond suhtelise tulubaasi järgi; ajaloolise tempo arvutusest jäetakse välja 2021→2022 metoodikahüpe |
+
+## Otsuse staatus
+
+30.10.2026: Peeter andis valiku Claude'ile („tee mis parem”). Soovitused E1–E10 kehtivad vaikimisi, kuni Peeter mõne neist muudab.
 
 ## Eelmudelite sisemised vead (ei ole muudetud)
 
