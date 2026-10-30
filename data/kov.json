@@ -1,0 +1,22 @@
+{
+  "_doc": "Omavalitsuste konfiguratsioon. Uue omavalitsuse lisamiseks lisa siia kirje ja täida pop.json, fin.json ning ext.json sama võtmega. Väljad: region = rühm, mille kohta arvutatakse sündimuse trend ja eluea trend (e0Ref = Statistikaameti RV0452 maakond); edu = haridusandmete allikas ('edu.json' või 'hinnang'); target = arengukava rahvaarvu siht; pilot = kas tegu on digitaalse kaksiku pilootvallaga; inMaak = kas kuulub Rapla maakonna summasse.",
+  "units": [
+    {"id":"Rapla","name":"Rapla vald","short":"Rapla","color":"#2F6FB0","region":"RAPLA","e0Ref":"Rapla","edu":"edu.json","inMaak":true,"pilot":false,"target":{"pop":15000,"year":2035,"src":"Rapla valla arengukava 2035"},"ehak":"0669"},
+    {"id":"Kohila","name":"Kohila vald","short":"Kohila","color":"#1E8C6E","region":"RAPLA","e0Ref":"Rapla","edu":"edu.json","inMaak":true,"pilot":true,"target":{"pop":10000,"year":2035,"src":"Kohila valla arengukava 2023–2035"},"ehak":"0317"},
+    {"id":"Marjamaa","name":"Märjamaa vald","short":"Märjamaa","color":"#8A5BB8","region":"RAPLA","e0Ref":"Rapla","edu":"edu.json","inMaak":true,"pilot":false,"target":null,"ehak":null},
+    {"id":"Kehtna","name":"Kehtna vald","short":"Kehtna","color":"#C2577F","region":"RAPLA","e0Ref":"Rapla","edu":"edu.json","inMaak":true,"pilot":false,"target":{"pop":6000,"year":2035,"src":"Kehtna valla arengukava 2035"},"ehak":null},
+    {"id":"Rae","name":"Rae vald","short":"Rae","color":"#B8762A","region":"RAE","e0Ref":"Harju","edu":"hinnang","inMaak":false,"pilot":true,"target":null,"ehak":"0653"}
+  ],
+  "aggregates": [
+    {"id":"MAAK","name":"Rapla maakond","short":"Maakond","color":"#5B6470","members":["Rapla","Kohila","Marjamaa","Kehtna"],"target":{"pop":35000,"year":2035,"src":"Raplamaa arengustrateegia 2035+"}}
+  ],
+  "params": {
+    "start": 2026,
+    "end": 2036,
+    "migPatterns": {"r1":"2016–2021","mean":"keskmine","r2":"2021–2026","r2x":"2021–26 ilma põgeniketa","r3":"2024–2026"},
+    "defaultMig": "mean",
+    "wageGrowth": {"2027":5.5,"2028":5.0,"default":4.5},
+    "employmentBase": 68.5,
+    "eduProxyFrom": "Kohila"
+  }
+}

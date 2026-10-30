@@ -1,0 +1,580 @@
+<title>Kaksiku eelmudel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Paigutus: tööleht. Päis ja püsiv stsenaariumiriba ülal, vasakul peatükkide navigatsioon, paremal kasutusjuhud ja kaksiku ettevalmistuse materjal.
+   Värvid: kaardisinine (mudel, valikud) ja planeeringuoranž (arendused, lisandumine); seisundivärvid eraldi. */
+:root{
+  --paper:#F2F4F6; --surface:#FFFFFF; --surface-2:#F7F8FA; --ink:#14202C; --muted:#586676; --faint:#8A96A3; --line:#D7DDE4; --line-2:#E6EAEF;
+  --accent:#1F4FA0; --accent-ink:#FFFFFF; --accent-soft:#E2EAF6; --dev:#B3601D; --dev-soft:#F6E8DC;
+  --good:#1D7448; --good-soft:#E0F1E7; --warn:#966000; --warn-soft:#F7EDD5; --crit:#B03535; --crit-soft:#F7E1E1;
+  --grid:#E3E8EE; --shadow:0 1px 2px rgba(20,32,44,.06),0 4px 14px rgba(20,32,44,.05);
+  --f-display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif; --f-body:"Public Sans","Segoe UI",Roboto,Arial,sans-serif; --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0E141B; --surface:#161F29; --surface-2:#1B2531; --ink:#E5EBF1; --muted:#97A5B4; --faint:#6D7B8A; --line:#2B3746; --line-2:#222D3A;
+  --accent:#86A9E6; --accent-ink:#0E141B; --accent-soft:#1C2C46; --dev:#E19A5A; --dev-soft:#3A2818;
+  --good:#62C08C; --good-soft:#163526; --warn:#E2B252; --warn-soft:#3A2F14; --crit:#E77B7B; --crit-soft:#3E1D1D;
+  --grid:#243040; --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0E141B; --surface:#161F29; --surface-2:#1B2531; --ink:#E5EBF1; --muted:#97A5B4; --faint:#6D7B8A; --line:#2B3746; --line-2:#222D3A;
+  --accent:#86A9E6; --accent-ink:#0E141B; --accent-soft:#1C2C46; --dev:#E19A5A; --dev-soft:#3A2818;
+  --good:#62C08C; --good-soft:#163526; --warn:#E2B252; --warn-soft:#3A2F14; --crit:#E77B7B; --crit-soft:#3E1D1D;
+  --grid:#243040; --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 120px)}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:14.5px;line-height:1.55}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.005em}
+h1{font-size:30px;font-weight:700;line-height:1.1}
+h2{font-size:22px;font-weight:700;line-height:1.2}
+h3{font-size:16px;font-weight:600}
+p{margin:0}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono,.num,td.n,th.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:20px;padding-block:0 64px}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.lab{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+
+/* päis */
+header.top{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between;padding-block:26px 16px}
+header.top .sub{max-width:72ch;color:var(--muted);margin-top:6px}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap}
+.badge b{color:var(--ink);font-weight:500}
+.badge.ok{border-color:transparent;background:var(--good-soft);color:var(--good)}
+.badge.bad{border-color:transparent;background:var(--crit-soft);color:var(--crit)}
+
+/* stsenaariumiriba */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;margin-inline:-20px;padding:10px 20px;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(8px);border-block:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.ctl{display:flex;align-items:center;gap:8px}
+.ctl label{font-size:12px;color:var(--muted);white-space:nowrap}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden}
+.seg button{border:0;border-right:1px solid var(--line);background:transparent;padding:6px 11px;cursor:pointer;font-size:13px;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.seg button:last-child{border-right:0}
+.seg button i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button[aria-pressed="true"] i{box-shadow:0 0 0 2px var(--accent-ink)}
+.seg button sup{font-family:var(--f-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+select,input[type=number],input[type=text]{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:13px;min-width:0}
+input[type=number]{width:96px;font-family:var(--f-mono)}
+input[type=range]{accent-color:var(--accent);width:120px}
+
+/* põhiruudustik */
+.layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:28px;margin-top:22px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 74px);align-self:start;display:flex;flex-direction:column;gap:2px;font-size:13.5px}
+nav.toc .grp{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:14px 0 4px 10px}
+nav.toc .grp:first-child{margin-top:0}
+nav.toc a{display:flex;gap:8px;align-items:baseline;text-decoration:none;color:var(--muted);padding:5px 10px;border-radius:5px;border-left:2px solid transparent}
+nav.toc a:hover{color:var(--ink);background:var(--surface)}
+nav.toc a.on{color:var(--ink);background:var(--surface);border-left-color:var(--accent)}
+nav.toc a span{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);min-width:22px}
+main{display:flex;flex-direction:column;gap:30px;min-width:0}
+section.ch{display:flex;flex-direction:column;gap:14px;min-width:0}
+.chh{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.chh .lab{order:-1;flex-basis:100%}
+.lead{max-width:80ch;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--shadow)}
+.box.flat{box-shadow:none}
+.boxh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 12px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:16px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px}
+@media (max-width:980px){.layout{grid-template-columns:1fr}nav.toc{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:6px;border-bottom:1px solid var(--line)}nav.toc .grp{display:none}nav.toc a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent}nav.toc a.on{border-bottom-color:var(--accent)}}
+
+/* näitajad */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi .lab{margin-bottom:2px}
+.kpi b{font-family:var(--f-mono);font-weight:500;font-size:22px;line-height:1.25;font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:12px}
+.box>.pill{align-self:flex-start}
+td:first-child{white-space:nowrap}
+.kpi.dev{border-color:color-mix(in srgb,var(--dev) 45%,var(--line));background:linear-gradient(180deg,var(--dev-soft),var(--surface) 70%)}
+
+/* tabelid */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);white-space:nowrap;position:sticky;top:0}
+td.n,th.n{text-align:right;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--surface-2)}
+tr.tot td{font-weight:600;border-top:1px solid var(--line)}
+tr.sel td{background:var(--accent-soft)}
+td.tx{white-space:normal;min-width:220px}
+.vdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:0}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.04em;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--good-soft);color:var(--good)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.crit{background:var(--crit-soft);color:var(--crit)} .pill.info{background:var(--accent-soft);color:var(--accent)} .pill.dev{background:var(--dev-soft);color:var(--dev)} .pill.mut{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.pos{color:var(--good)} .neg{color:var(--crit)}
+.err{font-family:var(--f-mono);font-size:12.5px;padding:2px 6px;border-radius:4px}
+
+/* vormid */
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px 14px;align-items:end}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:12px;color:var(--muted)}
+.f input,.f select{width:100%}
+.f small{font-size:11px;color:var(--faint)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13px}
+.tabs button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:600}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:500}
+.btn.ghost{background:transparent;color:var(--accent)}
+.textout{background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;padding:12px 14px;font-size:14px;line-height:1.65;max-width:90ch;white-space:pre-wrap}
+.note{font-size:12.5px;color:var(--muted);max-width:95ch}
+.callout{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:6px;background:var(--warn-soft);color:var(--ink);font-size:13px}
+.callout b{color:var(--warn)}
+ol.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+ol.steps li::marker{font-family:var(--f-mono);color:var(--accent)}
+code{font-family:var(--f-mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--line-2);padding:1px 5px;border-radius:4px}
+
+/* graafikud */
+.chart svg{width:100%;height:auto;display:block}
+.chart text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.chart .gl{stroke:var(--grid)}
+.chart .ax{stroke:var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:3px;background:var(--c)}
+.legend i.d{background:none;border-top:2px dashed var(--c);height:0}
+.stack{display:flex;height:22px;border-radius:4px;overflow:hidden;background:var(--surface-2)}
+.stack span{display:block;height:100%}
+.loading{padding:40px 0;color:var(--muted)}
+.loaderr{padding:16px;border-radius:8px;background:var(--crit-soft);color:var(--crit)}
+@media (max-width:700px){.bar{position:static}html{scroll-padding-top:16px}}
+@media (max-width:600px){h1{font-size:25px}.wrap{padding-inline:16px}.bar{margin-inline:-16px;padding-inline:16px}.box{padding:14px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="lab">Digitaalse kaksiku eelmudel · Kohila ja Rae vald · Rapla maakond</div>
+      <h1>Kaksiku eelmudel</h1>
+      <p class="sub">Raplamaa juhtimiskeskuse arvutusloogika, mis on eraldatud kasutajaliidesest ja täiendatud ideekavandi „KOV digitaalne kaksik / AI andmeanalüütik” kasutusjuhtudega. Eesmärk on anda kaksiku hankele valmis andmemudel, testitud arvutusmootor ja läbiproovitud kasutusjuhud. Eelnõude tekstianalüüs ei kuulu siia, see on hilisem eraldi teenus.</p>
+    </div>
+    <div class="badges" id="hdrBadges"><span class="badge">Laadin andmeid…</span></div>
+  </header>
+
+  <div class="bar" id="bar" hidden>
+    <div class="ctl"><label>Omavalitsus</label><div class="seg" id="unitSeg"></div></div>
+    <div class="ctl"><label for="migSel">Rändemuster</label><select id="migSel"></select></div>
+    <div class="ctl"><label for="extraIn">Lisaränne, in/a</label><input type="number" id="extraIn" value="0" step="10"></div>
+    <div class="ctl"><label for="fertIn">Sündimus</label><input type="range" id="fertIn" min="-20" max="20" step="5" value="0"><span class="mono small" id="fertOut">±0%</span></div>
+  </div>
+
+  <div id="app" class="loading">Laadin andmefaile ja kalibreerin mudelit…</div>
+</div>
+
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+(function(){
+"use strict";
+const E = window.TwinEngine;
+const FILES = ["kov","pop","fin","edu","ext","settlements","dictionary","usecases","reference"];
+const S = { unit:"Kohila", mig:"mean", extra:0, fert:0 };
+let D, ctx, TESTS;
+const $ = s => document.querySelector(s);
+const f0 = E.fmt, eur = E.eurT;
+const sg = v => (Math.round(v) > 0 ? "+" : "") + f0(v);
+const pc = (v, d = 1) => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v * 100).toFixed(d).replace(".", ",") + "%";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- abifunktsioonid ---------- */
+const unitsAll = () => D.kov.units;
+const isAgg = id => !!ctx.aggregates[id];
+const UN = id => isAgg(id) ? ctx.aggregates[id] : ctx.units[id];
+const params = () => ({ mig: S.mig, extra: S.extra, fert: S.fert });
+const projCache = new Map();
+function proj(id, p) { p = p || params(); const k = id + "|" + JSON.stringify(p); if (!projCache.has(k)) { projCache.set(k, isAgg(id) ? E.projectAgg(ctx, id, p) : E.project(ctx, id, p)); if (projCache.size > 400) projCache.clear(); } return projCache.get(k); }
+const ageAt = (id, y, p) => y <= 2026 ? (D.pop[id].age[String(y)]) : proj(id, p)[y];
+const popAt = (id, y, p) => E.total(ageAt(id, y, p));
+function eduAt(id, y, p) { if (isAgg(id)) { const r = { la:0, sc:0, pk:0 }; ctx.aggregates[id].members.forEach(m => { const d = E.eduDemand(ctx, m, ageAt(m, y, p)); r.la += d.la; r.sc += d.sc; r.pk += d.pk; }); return r; } return E.eduDemand(ctx, id, ageAt(id, y, p)); }
+const formUnit = () => isAgg(S.unit) ? "Kohila" : S.unit;
+const dot = id => `<span class="vdot" style="background:${UN(id).color}"></span>`;
+
+/* ---------- joongraafik ---------- */
+function lineChart(el, o) {
+  const W = Math.max(320, Math.round(el.clientWidth || 700)), H = o.h || 250, m = { l: 54, r: 14, t: 12, b: 26 };
+  const xs = o.series.flatMap(s => s.pts.map(p => p[0])), ys = o.series.flatMap(s => s.pts.map(p => p[1])).concat(o.yref || []);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  let y0 = o.y0 != null ? o.y0 : Math.min(...ys), y1 = Math.max(...ys); if (y0 === y1) { y0 -= 1; y1 += 1; }
+  const span = y1 - y0, stepRaw = span / 4, mag = Math.pow(10, Math.floor(Math.log10(stepRaw))), st = [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => k >= stepRaw);
+  y0 = Math.floor(y0 / st) * st; y1 = Math.ceil(y1 / st) * st;
+  const X = x => m.l + (x - x0) / (x1 - x0) * (W - m.l - m.r), Y = y => H - m.b - (y - y0) / (y1 - y0) * (H - m.t - m.b);
+  let g = "";
+  for (let v = y0; v <= y1 + 1e-9; v += st) g += `<line class="gl" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${(o.yfmt || f0)(v)}</text>`;
+  const xstep = (x1 - x0) > 12 ? 5 : (x1 - x0) > 6 ? 2 : 1;
+  for (let x = Math.ceil(x0 / xstep) * xstep; x <= x1; x += xstep) g += `<text x="${X(x)}" y="${H - 7}" text-anchor="middle">${x}</text>`;
+  if (o.vline) g += `<line x1="${X(o.vline)}" x2="${X(o.vline)}" y1="${m.t}" y2="${H - m.b}" stroke="${css("--faint")}" stroke-dasharray="3 3"/>`;
+  (o.refs || []).forEach(r => g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(r.y)}" y2="${Y(r.y)}" stroke="${r.color}" stroke-width="1.5" stroke-dasharray="6 4"/><text x="${W - m.r - 4}" y="${Y(r.y) - 5}" text-anchor="end" style="fill:${r.color}">${esc(r.label)}</text>`);
+  o.series.forEach(s => {
+    const d = s.pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + "," + Y(p[1]).toFixed(1)).join("");
+    if (s.area) g += `<path d="${d}L${X(s.pts[s.pts.length - 1][0])},${Y(Math.max(y0, 0))}L${X(s.pts[0][0])},${Y(Math.max(y0, 0))}Z" fill="${s.color}" opacity=".12"/>`;
+    g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.w || 2}" ${s.dash ? 'stroke-dasharray="5 4"' : ""} stroke-linejoin="round" stroke-linecap="round" opacity="${s.op || 1}"/>`;
+    if (s.end) { const p = s.pts[s.pts.length - 1]; g += `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3.5" fill="${s.color}"/><text x="${X(p[0]) - 6}" y="${Y(p[1]) - 8}" text-anchor="end" style="fill:${s.color};font-weight:500">${(o.yfmt || f0)(p[1])}</text>`; }
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label || "graafik")}">${g}</svg>`;
+}
+const legend = items => `<div class="legend">${items.map(i => `<span><i class="${i.dash ? "d" : ""}" style="--c:${i.color}"></i>${esc(i.name)}</span>`).join("")}</div>`;
+
+/* ---------- peatükid ---------- */
+const CH = [
+  ["Mudel", [["ylevaade","Ülevaade"],["rahvastik","Rahvastik ja teenusvajadus"]]],
+  ["Kasutusjuhud", [["elamu","Elamuarenduse mõju"],["invest","Investeeringuvajadus"],["otsus","Otsuse mõju eelhinnang"],["liikuvus","Liikuvus ja koolitee"]]],
+  ["Kaksiku ettevalmistus", [["tapsus","Täpsus ja vastuvõtukriteeriumid"],["kasutus","Kasutusjuhtude kataloog"],["andmed","Andmesõnastik ja allikakaart"],["mootor","Arvutusmootor ja testid"],["konf","Omavalitsuste konfiguratsioon"]]]
+];
+function shell() {
+  let n = 0;
+  const toc = CH.map(([g, items]) => `<div class="grp">${g}</div>` + items.map(([id, t]) => `<a href="#${id}" data-id="${id}"><span>${String(++n).padStart(2, "0")}</span>${t}</a>`).join("")).join("");
+  n = 0;
+  const secs = CH.flatMap(([g, items]) => items.map(([id, t]) => `<section class="ch" id="${id}"><div class="chh"><span class="lab">${String(++n).padStart(2, "0")} · ${g}</span><h2>${t}</h2></div><div id="${id}-body" class="chb" style="display:flex;flex-direction:column;gap:14px;min-width:0"></div></section>`)).join("");
+  $("#app").className = ""; $("#app").innerHTML = `<div class="layout"><nav class="toc" aria-label="Peatükid">${toc}</nav><main>${secs}</main></div>`;
+  const links = [...document.querySelectorAll("nav.toc a")];
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle("on", a.dataset.id === e.target.id)); }), { rootMargin: "-30% 0px -60% 0px" });
+  document.querySelectorAll("section.ch").forEach(s => io.observe(s));
+}
+
+/* 01 Ülevaade */
+const PROMISES = [
+  ["Demograafiliste muutuste prognoos vähemalt 5 aasta perspektiivis","ok","Kohortmudel 2026–2036, viis rändemustrit, sündimuse ja suremuse trendid, testitud põhimudeliga","Aadressi täpsus ja aastased registriandmed"],
+  ["Teenusvajaduse prognoos (haridus)","ok","Lasteaia- ja koolinõudlus valla ja asula kaupa","Asutuse ja teeninduspiirkonna täpsus EHIS-est"],
+  ["Elamuarenduste mõju (120 korteri näide)","ok","Kalkulaator: elanikud, kohad, tulumaks, kulud, pendelränne, koolitee","Arendused otse PLANIS-est ja ehitisregistrist"],
+  ["Investeeringuvajaduse prognoos","warn","Kohtade puudujääk, investeering ja mõju võlakoormusele","Tegelik mahutavus ja ühikuhinnad"],
+  ["Otsuste mõju hindamine enne vastuvõtmist","ok","Struktureeritud eelhinnang ja seletuskirja mõjude lõik","Eelnõu tekstianalüüs on eraldi hilisem teenus"],
+  ["Ühistransport ja ruumiline planeerimine","warn","Pendelränne ja koolitee hinnang asulate järgi","Ühistranspordi graafikud ja marsruutimine"],
+  ["Arengukavade eesmärkide kontroll","ok","Rahvaarvu sihi saavutatavus ja vajalik ränne","Kõigi arengukava mõõdikute seire"],
+  ["Rakendatavus teistes omavalitsustes","ok","Omavalitsus lisatakse konfiguratsiooniga; Rae on lisatud pilootvallana","ELVL-i kaudu laiendamine"],
+  ["Andmeallikate kaardistus ja andmekaitse","ok","Andmesõnastik: kõik näitajad praeguse ja sihtallikaga ning isikuandmete märkega","Andmekaitse mõjuhinnang kaksiku arhitektuuri järgi"],
+  ["Kriisikindlus (haavatavad sihtrühmad)","crit","Ei ole eelmudelis","Rahvastikuregister, sotsiaalteenuste andmed"]
+];
+const ST = { ok:["ok","eelmudelis"], warn:["warn","osaliselt"], crit:["crit","ainult kaksik"] };
+function rYlevaade() {
+  const id = S.unit, u = UN(id), y1 = 2031, y2 = 2036, p26 = popAt(id, 2026), p36 = popAt(id, y2), e26 = eduAt(id, 2026), e36 = eduAt(id, y2);
+  let tax = null; if (!isAgg(id)) { const t = E.taxSeries(ctx, id, E.agesFn(ctx, id, proj(id))); tax = [t[2026], t[y2] / E.wageIdx(ctx, y2, {})]; }
+  const tgt = u.target;
+  $("#ylevaade-body").innerHTML = `
+  <p class="lead">Valitud: <b>${esc(u.name)}</b>${u.pilot ? ' <span class="pill dev">pilootvald</span>' : ""}${id === "Rae" ? ' <span class="pill mut">ei kuulu Rapla maakonda</span>' : ""}. Näitajad järgivad ülal valitud stsenaariumi (${esc(D.kov.params.migPatterns[S.mig])}).</p>
+  <div class="kpis">
+    <div class="kpi"><span class="lab">Rahvaarv ${y2}</span><b>${f0(p36)}</b><small>2026: ${f0(p26)} · ${pc(p36 / p26 - 1)}</small></div>
+    <div class="kpi"><span class="lab">Lasteaialapsed ${y2}</span><b>${f0(e36.la)}</b><small>2026: ${f0(e26.la)} · ${pc(e36.la / e26.la - 1)}</small></div>
+    <div class="kpi"><span class="lab">Õpilased ${y2}</span><b>${f0(e36.sc)}</b><small>2026: ${f0(e26.sc)} · ${pc(e36.sc / e26.sc - 1)}</small></div>
+    ${tax ? `<div class="kpi"><span class="lab">Tulumaks ${y2}</span><b>${eur(tax[1])}</b><small>2026: ${eur(tax[0])} · 2026. a hindades</small></div>` : `<div class="kpi"><span class="lab">Liikmed</span><b>${u.members.length}</b><small>${u.members.map(m => ctx.units[m].short).join(", ")}</small></div>`}
+    ${tgt ? `<div class="kpi"><span class="lab">Arengukava siht ${tgt.year}</span><b>${f0(tgt.pop)}</b><small>mudel: ${f0(popAt(id, tgt.year))} · ${popAt(id, tgt.year) >= tgt.pop ? "täitub" : "ei täitu"}</small></div>` : ""}
+  </div>
+  <div class="box flat"><div class="boxh"><h3>Ideekavandi lubadused ja eelmudeli kate</h3><span class="small muted">Mida saab hankele anda valmis kujul ja mis jääb kaksikule</span></div>
+  <div class="tw"><table><thead><tr><th>Ideekavandi lubadus</th><th>Seis</th><th>Eelmudelis</th><th>Kaksik lisab</th></tr></thead><tbody>
+  ${PROMISES.map(r => `<tr><td class="tx">${esc(r[0])}</td><td><span class="pill ${ST[r[1]][0]}">${ST[r[1]][1]}</span></td><td class="tx">${esc(r[2])}</td><td class="tx muted">${esc(r[3])}</td></tr>`).join("")}
+  </tbody></table></div></div>`;
+}
+
+/* 02 Rahvastik */
+function rRahvastik() {
+  const id = S.unit, u = UN(id), migs = Object.keys(D.kov.params.migPatterns);
+  const hist = []; for (let y = 2015; y <= 2026; y++) hist.push([y, D.pop[id].tot[String(y)]]);
+  const cols = { r1: css("--faint"), mean: css("--accent"), r2: css("--good"), r2x: css("--warn"), r3: css("--crit") };
+  const ser = [{ pts: hist, color: css("--ink"), w: 2.4 }].concat(migs.map(m => { const P = proj(id, { ...params(), mig: m }), pts = []; for (let y = 2026; y <= 2036; y++) pts.push([y, E.total(P[y])]); return { pts, color: cols[m], w: m === S.mig ? 2.8 : 1.4, dash: m !== S.mig, end: m === S.mig, op: m === S.mig ? 1 : .8 }; }));
+  const bandsY = [2026, 2031, 2036], B = E.BANDS;
+  const L = !isAgg(id) && D.settlements[id] ? E.settlementLayer(ctx, id, proj(id), 2036) : null;
+  const L26 = L ? E.settlementLayer(ctx, id, proj(id), 2026) : null;
+  $("#rahvastik-body").innerHTML = `
+  <div class="g2">
+    <div class="box"><div class="boxh"><h3>Rahvaarv 2015–2036</h3><span class="small muted">${esc(u.name)}</span></div>
+      <div class="chart" id="popChart"></div>${legend([{ name:"tegelik", color:css("--ink") }].concat(migs.map(m => ({ name:D.kov.params.migPatterns[m], color:cols[m], dash:m !== S.mig }))))}
+      <p class="note">Rändemuster on omavalitsuse tegeliku rändejäägi vanusejaotus valitud perioodil. Paks joon on valitud muster.${u.target ? ` Punktiirjoon on arengukava siht ${f0(u.target.pop)} (${u.target.year}).` : ""}</p></div>
+    <div class="box"><div class="boxh"><h3>Lasteaia- ja koolinõudlus</h3><span class="small muted">${ctx.eduBase[id] ? esc(ctx.eduBase[id].src) : "liikmete summa"}</span></div>
+      <div class="chart" id="eduChart"></div>${legend([{ name:"lasteaialapsed", color:css("--dev") }, { name:"õpilased (põhikool + gümnaasium)", color:css("--accent") }])}
+      <p class="note">Nõudlus muutub koos 1–6- ja 7–18-aastaste arvuga; baas on 2025/26 õppeaasta laste ja õpilaste arv.${id === "Rae" ? " Rae baas on hinnang Kohila osalusmäära järgi, sest Rae haridusandmeid eelmudelis ei ole." : ""}</p></div>
+  </div>
+  <div class="tw"><table><thead><tr><th>Vanuserühm</th>${bandsY.map(y => `<th class="n">${y}</th>`).join("")}<th class="n">Muutus 2026–2036</th></tr></thead><tbody>
+  ${B.map(([l, i, j]) => { const v = bandsY.map(y => E.sumG(ageAt(id, y), i, j)); return `<tr><td>${l}</td>${v.map(x => `<td class="n">${f0(x)}</td>`).join("")}<td class="n ${v[2] >= v[0] ? "pos" : "neg"}">${pc(v[2] / v[0] - 1)}</td></tr>`; }).join("")}
+  <tr class="tot"><td>Kokku</td>${bandsY.map(y => `<td class="n">${f0(popAt(id, y))}</td>`).join("")}<td class="n">${pc(popAt(id, 2036) / popAt(id, 2026) - 1)}</td></tr></tbody></table></div>
+  ${L ? `<div class="box flat"><div class="boxh"><h3>Asulate kaupa (piirkonnakiht)</h3><span class="small muted">REL 2021 osakaalud · alla 200 elanikuga asulad koondatud</span></div>
+  <div class="tw"><table><thead><tr><th>Asula</th><th class="n">REL 2021</th><th class="n">Rahvaarv 2026</th><th class="n">Rahvaarv 2036</th><th class="n">Lasteaiaealised 2036</th><th class="n">Põhikooliõpilased 2036</th><th>Põhikool</th></tr></thead><tbody>
+  ${L.map((r, i) => `<tr><td>${esc(r.n)}</td><td class="n">${f0(r.pop21)}</td><td class="n">${f0(L26[i].pop)}</td><td class="n">${f0(r.pop)}</td><td class="n">${f0(r.la)}</td><td class="n">${f0(r.pk)}</td><td>${r.school ? '<span class="pill ok">on</span>' : r.other ? '<span class="pill mut">osaliselt</span>' : '<span class="pill warn">ei ole</span>'}</td></tr>`).join("")}
+  </tbody></table></div><p class="note">Eelmudel jagab valla prognoosi asulatesse 2021. aasta rahvaloenduse osakaalude järgi, seega kõik asulad kasvavad või kahanevad sama tempoga. Kaksik saab asulate oma trendid Rahvastikuregistri aastaandmetest.${id === "Rae" ? " Soodevahe küla täiskasvanud elanikud on suures osas Tallinna Vangla kinnipeetavad." : ""}</p></div>` : ""}`;
+  lineChart($("#popChart"), { series: ser, refs: u.target ? [{ y: u.target.pop, label: "siht " + f0(u.target.pop), color: css("--dev") }] : [], vline: 2026, label: "Rahvaarv" });
+  const la = [], sc = []; for (let y = 2026; y <= 2036; y++) { const d = eduAt(id, y); la.push([y, d.la]); sc.push([y, d.sc]); }
+  lineChart($("#eduChart"), { series: [{ pts: sc, color: css("--accent"), end: true, w: 2.4 }, { pts: la, color: css("--dev"), end: true, w: 2.4 }], y0: 0, label: "Haridusnõudlus" });
+}
+
+/* 03 Elamuarendus */
+const HI = { unit:null, n:120, type:"korter", start:2028, years:2, hh:"", occ:95, outside:70, settlement:"", capLa:"", capSc:"", priceLa:30000, priceSc:25000 };
+function hiInputs() { const id = HI.unit || formUnit(); return { n:+HI.n, type:HI.type, start:+HI.start, years:+HI.years, hh:HI.hh ? +HI.hh : null, occ:+HI.occ / 100, outside:+HI.outside / 100, settlement:HI.settlement || null, capLa:HI.capLa !== "" ? +HI.capLa : null, capSc:HI.capSc !== "" ? +HI.capSc : null, priceLa:+HI.priceLa, priceSc:+HI.priceSc, unit:id }; }
+function rElamu() {
+  const id = HI.unit || formUnit(); HI.unit = id;
+  const sets = D.settlements[id] || [];
+  if (HI.settlement && !sets.find(s => s[0] === HI.settlement)) HI.settlement = "";
+  const vopts = unitsAll().map(u => `<option value="${u.id}" ${u.id === id ? "selected" : ""}>${esc(u.name)}</option>`).join("");
+  $("#elamu-body").innerHTML = `
+  <p class="lead">Ideekavandi näide: detailplaneeringu või ehitusloa alusel kavandatakse uus elamu. Kalkulaator näitab, kui palju elanikke lisandub, mida see teeb lasteaia- ja koolikohtade nõudlusele, tulumaksule ja kuludele ning kas arenduse asukohas on põhikool.</p>
+  <div class="box"><form class="form" id="hiForm" onsubmit="return false">
+    <div class="f"><label for="hiUnit">Omavalitsus</label><select id="hiUnit" data-k="unit">${vopts}</select></div>
+    <div class="f"><label for="hiN">Eluruume</label><input type="number" id="hiN" data-k="n" min="1" step="10" value="${HI.n}"></div>
+    <div class="f"><label for="hiType">Elamutüüp</label><select id="hiType" data-k="type">${["korter","ridaelamu","eramu"].map(t => `<option ${t === HI.type ? "selected" : ""} value="${t}">${{ korter:"korterelamu", ridaelamu:"ridaelamu", eramu:"eramud" }[t]}</option>`).join("")}</select></div>
+    <div class="f"><label for="hiStart">Asustamine algab</label><input type="number" id="hiStart" data-k="start" min="2027" max="2036" value="${HI.start}"></div>
+    <div class="f"><label for="hiYears">Asustamise kestus, a</label><input type="number" id="hiYears" data-k="years" min="1" max="8" value="${HI.years}"></div>
+    <div class="f"><label for="hiSet">Asukoht (asula)</label><select id="hiSet" data-k="settlement"><option value="">täpsustamata</option>${sets.map(s => `<option ${s[0] === HI.settlement ? "selected" : ""}>${esc(s[0])}</option>`).join("")}</select></div>
+    <div class="f"><label for="hiHh">Elanikke leibkonnas</label><input type="number" id="hiHh" data-k="hh" step="0.1" min="1" max="5" placeholder="${E.HH[HI.type]}" value="${HI.hh}"><small>tühi = tüübi vaikeväärtus (hinnang)</small></div>
+    <div class="f"><label for="hiOcc">Täituvus, %</label><input type="number" id="hiOcc" data-k="occ" min="10" max="100" value="${HI.occ}"></div>
+    <div class="f"><label for="hiOut">Tulijad väljastpoolt valda, %</label><input type="number" id="hiOut" data-k="outside" min="0" max="100" value="${HI.outside}"><small>vallasisene kolimine ei lisa elanikke</small></div>
+    <div class="f"><label for="hiCapLa">Lasteaiakohti</label><input type="number" id="hiCapLa" data-k="capLa" placeholder="${f0(ctx.eduBase[id].la)}" value="${HI.capLa}"><small>tühi = praegune laste arv</small></div>
+    <div class="f"><label for="hiCapSc">Koolikohti</label><input type="number" id="hiCapSc" data-k="capSc" placeholder="${f0(ctx.eduBase[id].pk + ctx.eduBase[id].g)}" value="${HI.capSc}"><small>tühi = praegune õpilaste arv</small></div>
+  </form></div>
+  <div id="hiOut2"></div>`;
+  $("#hiForm").addEventListener("input", e => { const k = e.target.dataset.k; if (!k) return; HI[k] = e.target.value; if (k === "unit" || k === "type") rElamu(); else hiResult(); });
+  hiResult();
+}
+function hiResult() {
+  const inp = hiInputs(), H = E.housingImpact(ctx, inp.unit, inp, params()), L = H.last, pl = H.peakLa, ps = H.peakSc;
+  const net = L.dTaxR - L.dCost;
+  $("#hiOut2").innerHTML = `
+  <div class="kpis">
+    <div class="kpi dev"><span class="lab">Uusi elanikke</span><b>${f0(H.newcomers)}</b><small>2036: rahvaarv ${sg(L.dPop)} võrreldes ilma arenduseta</small></div>
+    <div class="kpi dev"><span class="lab">Lasteaialapsi juurde</span><b>${sg(pl.dLa)}</b><small>tipp ${pl.y} · ${H.cap.firstLa ? "kohti puudu alates " + H.cap.firstLa : "mahub kohtadesse"}</small></div>
+    <div class="kpi dev"><span class="lab">Õpilasi juurde</span><b>${sg(ps.dSc)}</b><small>tipp ${ps.y} · ${H.cap.firstSc ? "kohti puudu alates " + H.cap.firstSc : "mahub kohtadesse"}</small></div>
+    <div class="kpi"><span class="lab">Eelarve mõju 2036</span><b class="${net >= 0 ? "pos" : "neg"}">${sg(net / 1000)} tuh €/a</b><small>tulumaks ${sg(L.dTaxR / 1000)} · kulud ${sg(-L.dCost / 1000)} tuh €</small></div>
+    <div class="kpi"><span class="lab">Lisainvesteering</span><b>${eur(H.cap.investLa + H.cap.investSc)}</b><small>ainult arendusest tulenev puudujääk</small></div>
+    <div class="kpi"><span class="lab">Tööl Tallinnas</span><b>${sg(L.dTln)}</b><small>pendelrände osakaal ${Math.round(H.tlnShare * 100)}% (REL 2021)</small></div>
+  </div>
+  ${H.settlement && !H.settlement.hasSchool ? `<div class="callout"><b>Koolitee</b><span>Asukohas ${esc(H.settlement.name)} põhikooli ei ole. Umbes ${f0(ps.dPk)} põhikooliõpilast vajab transporti teise asulasse.</span></div>` : ""}
+  <div class="g2">
+    <div class="box"><div class="boxh"><h3>Lisanduv nõudlus aastate kaupa</h3></div><div class="chart" id="hiChart"></div>${legend([{ name:"lasteaialapsed", color:css("--dev") }, { name:"õpilased", color:css("--accent") }])}</div>
+    <div class="box"><div class="boxh"><h3>Kohtade bilanss</h3><span class="small muted">nõudlus koos arendusega</span></div><div class="chart" id="hiCap"></div>${legend([{ name:"lasteaed koos arendusega", color:css("--dev") }, { name:"lasteaed ilma", color:css("--dev"), dash:true }, { name:"kool koos arendusega", color:css("--accent") }, { name:"kool ilma", color:css("--accent"), dash:true }])}</div>
+  </div>
+  <div class="tw"><table><thead><tr><th>Aasta</th><th class="n">Lisandub</th><th class="n">Rahvaarv</th><th class="n">Lasteaed</th><th class="n">Kool</th><th class="n">Tulumaks, tuh €</th><th class="n">Kulud, tuh €</th><th class="n">Tööl Tallinnas</th></tr></thead><tbody>
+  ${H.rows.filter(r => r.y > 2026).map(r => `<tr><td>${r.y}</td><td class="n">${r.added ? f0(r.added) : "–"}</td><td class="n">${sg(r.dPop)}</td><td class="n">${sg(r.dLa)}</td><td class="n">${sg(r.dSc)}</td><td class="n">${sg(r.dTaxR / 1000)}</td><td class="n">${sg(r.dCost / 1000)}</td><td class="n">${sg(r.dTln)}</td></tr>`).join("")}
+  </tbody></table></div>
+  <p class="note">Tulumaks ja kulud on 2026. aasta hindades. Uute elanike vanusejaotus on mudeli pere sisserände profiil (lapsed ja 25–44-aastased). Haridusandmed: ${esc(H.eduSrc)}. Ühikukulud: ${esc(H.ucSrc)}. Tulumaks: ${esc(H.taxSrc)}. Investeeringu ühikuhinnad (${eur(H.cap.priceLa)} lasteaiakoht, ${eur(H.cap.priceSc)} koolikoht) on hinnangud.</p>`;
+  const a = [], b = []; H.rows.forEach(r => { a.push([r.y, r.dLa]); b.push([r.y, r.dSc]); });
+  lineChart($("#hiChart"), { series: [{ pts: b, color: css("--accent"), end: true }, { pts: a, color: css("--dev"), end: true }], y0: 0, label: "Lisanduv nõudlus" });
+  const s1 = H.rows.map(r => [r.y, r.scenLa]), s0 = H.rows.map(r => [r.y, r.baseLa]), k1 = H.rows.map(r => [r.y, r.scenSc]), k0 = H.rows.map(r => [r.y, r.baseSc]);
+  lineChart($("#hiCap"), { series: [{ pts: s0, color: css("--dev"), dash: true, w: 1.4 }, { pts: s1, color: css("--dev") }, { pts: k0, color: css("--accent"), dash: true, w: 1.4 }, { pts: k1, color: css("--accent") }],
+    refs: [{ y: H.cap.la, label: "lasteaiakohad " + f0(H.cap.la), color: css("--dev") }, { y: H.cap.sc, label: "koolikohad " + f0(H.cap.sc), color: css("--accent") }], y0: 0, label: "Kohtade bilanss" });
+}
+
+/* 04 Investeeringud */
+const CAP = {}; const PR = { la: 30000, sc: 25000 };
+function rInvest() {
+  const rows = unitsAll().map(u => {
+    const c = CAP[u.id] || {}, P = proj(u.id), I = E.investNeed(ctx, u.id, P, { la: c.la, sc: c.sc, priceLa: PR.la, priceSc: PR.sc }), inv = I.investLa + I.investSc, de = E.debtEffect(ctx, u.id, inv);
+    return { u, I, inv, de, c };
+  });
+  const yr = r => r ? r : "–";
+  $("#invest-body").innerHTML = `
+  <p class="lead">Kohtade puudujääk tekib siis, kui nõudlus ületab kohtade arvu. Sisesta iga omavalitsuse tegelik kohtade arv; tühja välja korral on kohtade arvuks praegune laste ja õpilaste arv (eeldus: kohad on täis). Investeering on suurim puudujääk korrutatud koha hinnaga ja eeldab laenuga katmist.</p>
+  <div class="box flat"><form class="form" id="prForm" onsubmit="return false">
+    <div class="f"><label for="prLa">Lasteaiakoha hind, €</label><input type="number" id="prLa" step="1000" value="${PR.la}"><small>hinnang</small></div>
+    <div class="f"><label for="prSc">Koolikoha hind, €</label><input type="number" id="prSc" step="1000" value="${PR.sc}"><small>hinnang</small></div>
+  </form></div>
+  <div class="tw"><table><thead><tr><th>Omavalitsus</th><th class="n">Lasteaiakohti</th><th class="n">Nõudlus 2036</th><th class="n">Puudu alates</th><th class="n">Suurim vahe</th><th class="n">Koolikohti</th><th class="n">Nõudlus 2036</th><th class="n">Puudu alates</th><th class="n">Suurim vahe</th><th class="n">Investeering</th><th class="n">Netovõlakoormus</th></tr></thead><tbody>
+  ${rows.map(({ u, I, inv, de, c }) => { const l36 = I.rows[I.rows.length - 1]; return `<tr class="${u.id === S.unit ? "sel" : ""}">
+    <td>${dot(u.id)}${esc(u.name)}${u.pilot ? ' <span class="pill dev">pilot</span>' : ""}</td>
+    <td class="n"><input type="number" aria-label="${esc(u.name)} lasteaiakohad" data-cap="${u.id}|la" placeholder="${f0(I.capLa)}" value="${c.la != null ? c.la : ""}" style="width:84px"></td>
+    <td class="n">${f0(l36.la)}</td><td class="n">${yr(I.firstLa)}</td><td class="n ${I.maxGapLa > 0.5 ? "neg" : "pos"}">${I.maxGapLa > 0.5 ? "+" + f0(I.maxGapLa) : "vabu " + f0(I.surplusLa)}</td>
+    <td class="n"><input type="number" aria-label="${esc(u.name)} koolikohad" data-cap="${u.id}|sc" placeholder="${f0(I.capSc)}" value="${c.sc != null ? c.sc : ""}" style="width:84px"></td>
+    <td class="n">${f0(l36.sc)}</td><td class="n">${yr(I.firstSc)}</td><td class="n ${I.maxGapSc > 0.5 ? "neg" : "pos"}">${I.maxGapSc > 0.5 ? "+" + f0(I.maxGapSc) : "vabu " + f0(I.surplusSc)}</td>
+    <td class="n">${inv > 0 ? eur(inv) : "–"}</td>
+    <td class="n">${de.before != null ? Math.round(de.before * 100) + "% → " + Math.round(de.after * 100) + "%" : `<span class="muted">+${Math.round(de.add * 100)} p.p.</span>`}</td></tr>`; }).join("")}
+  </tbody></table></div>
+  <p class="note">Netovõlakoormus on 2025. aasta netovõlg (eelarvestrateegiast) protsendina 2025. aasta põhitegevuse tuludest (RR300) enne ja pärast investeeringut. Rae eelarvestrateegia andmeid eelmudelis ei ole, seega on näidatud ainult lisanduv koormus protsendipunktides. Vabade kohtade arv on suurim ülejääk perioodil 2026–2036; see on sisend omavalitsustevahelisele koostööle (kataloogi kasutusjuht K10).</p>`;
+  $("#invest-body").onchange = e => { const t = e.target; if (t.dataset.cap) { const [id, k] = t.dataset.cap.split("|"); CAP[id] = CAP[id] || {}; CAP[id][k] = t.value === "" ? null : +t.value; rInvest(); } else if (t.id === "prLa" || t.id === "prSc") { PR[t.id === "prLa" ? "la" : "sc"] = +t.value || 0; rInvest(); } };
+}
+
+/* 05 Otsuse mõju */
+const OT = { type:"elamu", unit:null, kind:"la", delta:40, year:2028, target:null, tyear:2035 };
+function rOtsus() {
+  const id = OT.unit || formUnit(); OT.unit = id; const u = ctx.units[id];
+  if (OT.target == null || OT.lastUnit !== id) { OT.target = u.target ? u.target.pop : Math.round(popAt(id, 2026) * 1.1 / 100) * 100; OT.lastUnit = id; }
+  const vopts = unitsAll().map(x => `<option value="${x.id}" ${x.id === id ? "selected" : ""}>${esc(x.name)}</option>`).join("");
+  let form = "";
+  if (OT.type === "elamu") form = `<p class="small muted">Kasutab peatüki „Elamuarenduse mõju” sisendeid: ${f0(HI.n)} eluruumi, ${HI.type}, asustamine ${HI.start}–${+HI.start + +HI.years - 1}${HI.settlement ? ", " + esc(HI.settlement) : ""}. Muuda neid seal.</p>`;
+  if (OT.type === "kohad") form = `<form class="form" id="otForm" onsubmit="return false">
+    <div class="f"><label for="otKind">Asutus</label><select id="otKind" data-k="kind"><option value="la" ${OT.kind === "la" ? "selected" : ""}>lasteaed</option><option value="sc" ${OT.kind === "sc" ? "selected" : ""}>kool</option></select></div>
+    <div class="f"><label for="otDelta">Kohtade muutus</label><input type="number" id="otDelta" data-k="delta" step="10" value="${OT.delta}"><small>negatiivne = vähendamine</small></div>
+    <div class="f"><label for="otYear">Alates aastast</label><input type="number" id="otYear" data-k="year" min="2027" max="2036" value="${OT.year}"></div></form>`;
+  if (OT.type === "siht") form = `<form class="form" id="otForm" onsubmit="return false">
+    <div class="f"><label for="otTarget">Rahvaarvu siht</label><input type="number" id="otTarget" data-k="target" step="100" value="${OT.target}"></div>
+    <div class="f"><label for="otTyear">Sihtaasta</label><input type="number" id="otTyear" data-k="tyear" min="2028" max="2036" value="${OT.tyear}"></div></form>`;
+  $("#otsus-body").innerHTML = `
+  <p class="lead">Struktureeritud eelhinnang otsuse mõjudest rahvastikule, teenustele, eelarvele ja arengukava eesmärkidele. Tulemus on mõjude tabel ja seletuskirja mõjude lõigu mustand. Hiljem saab eelnõude tekstianalüüsi teenus sama vormi täita otse eelnõust.</p>
+  <div class="box">
+    <div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:end">
+      <div class="f" style="min-width:180px"><label for="otUnit">Omavalitsus</label><select id="otUnit">${vopts}</select></div>
+      <div class="f"><label>Otsuse tüüp</label><div class="tabs" id="otTabs">${[["elamu","Elamuarendus / detailplaneering"],["kohad","Lasteaia- või koolikohtade muutus"],["siht","Arengukava rahvaarvu siht"]].map(([k, t]) => `<button type="button" data-t="${k}" aria-pressed="${OT.type === k}">${t}</button>`).join("")}</div></div>
+    </div>${form}
+  </div><div id="otRes"></div>`;
+  $("#otTabs").onclick = e => { const b = e.target.closest("button"); if (b) { OT.type = b.dataset.t; rOtsus(); } };
+  $("#otUnit").onchange = e => { OT.unit = e.target.value; HI.unit = e.target.value; rOtsus(); };
+  const f = $("#otForm"); if (f) f.addEventListener("input", e => { const k = e.target.dataset.k; if (k) { OT[k] = e.target.type === "number" ? +e.target.value : e.target.value; otResult(); } });
+  otResult();
+}
+function otResult() {
+  const id = OT.unit; let R;
+  try {
+    if (OT.type === "elamu") { const inp = hiInputs(); inp.unit = id; if (HI.unit !== id) inp.settlement = null; R = E.decision(ctx, "elamu", inp, params()); }
+    if (OT.type === "kohad") R = E.decision(ctx, "kohad", { unit:id, kind:OT.kind, delta:OT.delta, year:OT.year, cap:CAP[id] ? CAP[id][OT.kind] : null }, params());
+    if (OT.type === "siht") R = E.decision(ctx, "siht", { unit:id, target:OT.target, year:OT.tyear }, params());
+  } catch (err) { $("#otRes").innerHTML = `<div class="loaderr">Arvutus ebaõnnestus: ${esc(err.message)}</div>`; return; }
+  $("#otRes").innerHTML = `
+  <div class="tw"><table><thead><tr><th>Valdkond</th><th>Praegu / ilma otsuseta</th><th>Mõju</th><th>Selgitus</th></tr></thead><tbody>
+  ${R.rows.map(r => `<tr><td><b>${esc(r.area)}</b></td><td class="mono small">${esc(r.now)}</td><td class="mono">${esc(r.effect)}</td><td class="tx muted">${esc(r.note)}</td></tr>`).join("")}</tbody></table></div>
+  <div class="box flat"><div class="boxh"><h3>Seletuskirja mõjude lõik (mustand)</h3><button class="btn" id="cpBtn" type="button">Kopeeri tekst</button></div>
+  <div class="textout" id="otText">${esc(R.text)}</div><p class="note">Mustand tuleb enne kasutamist üle vaadata. Numbrid järgivad ülal valitud stsenaariumi (${esc(D.kov.params.migPatterns[S.mig])}).</p></div>`;
+  $("#cpBtn").onclick = async () => { const t = $("#otText").textContent, b = $("#cpBtn"); try { await navigator.clipboard.writeText(t); b.textContent = "Kopeeritud"; } catch (e) { const r = document.createRange(); r.selectNodeContents($("#otText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Tekst valitud, kopeeri Ctrl+C"; } setTimeout(() => b.textContent = "Kopeeri tekst", 2200); };
+}
+
+/* 06 Liikuvus */
+function rLiikuvus() {
+  const cats = [["same","sama vald",css("--accent")],["tln","Tallinn",css("--dev")],["oth","muu Eesti",css("--faint")],["abr","välismaa",css("--crit")]];
+  const C = id => { const c = D.ext.COM[id]; return { same:c.same, tln:c.tln, abr:c.abr, oth:c.t - c.same - c.tln - c.abr, t:c.t }; };
+  const id = formUnit(), A = E.schoolAccess(ctx, id, proj(id), 2026), A36 = E.schoolAccess(ctx, id, proj(id), 2036);
+  $("#liikuvus-body").innerHTML = `
+  <p class="lead">Lihtsustatud liikuvuse kiht. Pendelränne tuleb 2021. aasta rahvaloendusest (töökoha asukoht). Koolitee vajadus on hinnatud asulate järgi: põhikooliealised, kelle elukohaasulas põhikooli ei ole. Ühistranspordi graafikud ja marsruudid on kaksiku töö.</p>
+  <div class="box"><div class="boxh"><h3>Kus hõivatud elanikud töötavad</h3><span class="small muted">REL 2021 · RL21163</span></div>
+  <div style="display:flex;flex-direction:column;gap:9px">${unitsAll().map(u => { const c = C(u.id); return `<div style="display:grid;grid-template-columns:minmax(90px,130px) minmax(0,1fr) 70px;gap:10px;align-items:center"><span class="small">${dot(u.id)}${esc(u.short)}</span><div class="stack" role="img" aria-label="${esc(u.name)} töökoha asukoht">${cats.map(([k, , col]) => `<span style="width:${c[k] / c.t * 100}%;background:${col}" title="${k}: ${f0(c[k])}"></span>`).join("")}</div><span class="mono small" style="text-align:right">${Math.round(c.tln / c.t * 100)}% Tln</span></div>`; }).join("")}</div>
+  ${legend(cats.map(([, n, c]) => ({ name:n, color:c })))}
+  <p class="note">Rae elanikest töötab Tallinnas ${Math.round(D.ext.COM.Rae.tln / D.ext.COM.Rae.t * 100)}%, Kohila elanikest ${Math.round(D.ext.COM.Kohila.tln / D.ext.COM.Kohila.t * 100)}%. Elamuarenduse kalkulaator kasutab neid osakaale lisanduvate Tallinnas töötajate hindamiseks.</p></div>
+  ${A ? `<div class="box"><div class="boxh"><h3>Koolitee vajadus: ${esc(ctx.units[id].name)}</h3><span class="small muted">vali omavalitsus ülal</span></div>
+  <div class="kpis"><div class="kpi"><span class="lab">Põhikooliealised koolita asulates 2026</span><b>${f0(A.pkOut)}</b><small>${Math.round(A.share * 100)}% kõigist (${f0(A.pkAll)})</small></div>
+  <div class="kpi"><span class="lab">Sama 2036</span><b>${f0(A36.pkOut)}</b><small>valitud stsenaarium</small></div></div>
+  <div class="tw"><table><thead><tr><th>Asula</th><th>Põhikool</th><th class="n">Põhikooliealised 2026</th><th class="n">2036</th></tr></thead><tbody>
+  ${A.rows.map((r, i) => `<tr><td>${esc(r.n)}</td><td>${r.school ? '<span class="pill ok">on</span>' : r.other ? '<span class="pill mut">osaliselt</span>' : '<span class="pill warn">ei ole</span>'}</td><td class="n">${f0(r.pk)}</td><td class="n">${f0(A36.rows[i].pk)}</td></tr>`).join("")}</tbody></table></div>
+  <p class="note">Ülemine hinnang: osa õpilasi käib teise valla või erakoolis ja osa koolita asulatest asub kooli lähedal. Koondrida „Muud külad” loetakse koolita asulaks.${D.edu.schoolNotes[id] ? " " + esc(D.edu.schoolNotes[id]) : ""}</p></div>` : ""}`;
+}
+
+/* 07 Täpsus */
+function rTapsus() {
+  const rows = unitsAll().map(u => ({ u, b: E.backtest(ctx, u.id) }));
+  const cls = e => { const a = Math.abs(e); return a < 0.03 ? "ok" : a < 0.08 ? "warn" : "crit"; };
+  const chip = e => `<span class="err pill ${cls(e)}">${pc(e)}</span>`;
+  const maxPop = Math.max(...rows.map(r => Math.abs(r.b.errOos))), med = arr => { const a = arr.slice().sort((x, y) => x - y); return a[Math.floor(a.length / 2)]; };
+  $("#tapsus-body").innerHTML = `
+  <p class="lead">Tagantjärele prognoos: mudel kalibreeritakse ainult 2021. aastani teada olnud andmetega (suremus ja sündimus 2016–2020, ränne 2016–2021) ja prognoositakse 2026. aasta. Võrdlus tegeliku rahvaarvuga näitab, kui suur viga on viie aasta prognoosil. Mehaanika kontrollis antakse mudelile tegelik 2021–2026 ränne.</p>
+  <div class="tw"><table><thead><tr><th>Omavalitsus</th><th class="n">Tegelik 2026</th><th class="n">Prognoos</th><th class="n">Viga</th>${E.BANDS.map(b => `<th class="n">${b[0]}</th>`).join("")}<th class="n">Keskm. abs. viga</th><th class="n">Mehaanika</th></tr></thead><tbody>
+  ${rows.map(({ u, b }) => `<tr><td>${dot(u.id)}${esc(u.name)}</td><td class="n">${f0(b.act)}</td><td class="n">${f0(b.oos)}</td><td class="n">${chip(b.errOos)}</td>${b.bands.map(x => `<td class="n">${chip(x.err)}</td>`).join("")}<td class="n">${(b.mape * 100).toFixed(1).replace(".", ",")}%</td><td class="n">${pc(b.errIns, 2)}</td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="g3">
+    <div class="box flat"><span class="pill ok">mehaanika</span><h3>Arvutus on kooskõlas</h3><p class="small muted">Tegeliku rändega kordab mudel 2026. aasta rahvaarvu kõigis viies omavalitsuses alla 0,2% veaga. Suremuse, sündimuse ja vananemise arvutus on õige.</p></div>
+    <div class="box flat"><span class="pill crit">peamine viga</span><h3>Ränne ja väikelapsed</h3><p class="small muted">Rahvaarvu viga oli kuni ${(maxPop * 100).toFixed(1).replace(".", ",")}%. Suurimad vead on 0–4-aastastel, sest sündimus langes 2021–2025 kiiresti, ja 15–19-aastastel. Rae 0–4 viga näitab, et kiiresti kasvavas vallas ei saa rändemustrit lugeda püsivaks.</p></div>
+    <div class="box flat"><span class="pill info">ettepanek hankesse</span><h3>Vastuvõtukriteeriumid</h3><p class="small muted">Kaksiku 5 aasta tagantjärele prognoos peab olema vähemalt sama täpne kui eelmudel ja esitama vahemiku: rahvaarvu viga alla ${Math.max(3, Math.ceil(med(rows.map(r => Math.abs(r.b.errOos))) * 100))}% vähemalt pooltes pilootvaldades, vanuserühmade keskmine absoluutne viga alla ${Math.ceil(med(rows.map(r => r.b.mape)) * 100)}% ning tegelik väärtus 80% vahemiku sees.</p></div>
+  </div>
+  <p class="note">Kriteeriumide arvud on tuletatud eelmudeli vigade mediaanist. Ainult üks tagantjärele aken (2021→2026) on avaandmetega võimalik, sest viieaastased vanuserühmad on andmetes alates 2015. aastast. Kaksik saab Rahvastikuregistri andmetega testida rohkem aastaid.</p>`;
+}
+
+/* 08 Kasutusjuhud */
+const USEST = { "eelmudelis":["ok","eelmudelis"], "osaliselt":["warn","osaliselt"], "kaksik":["crit","ainult kaksik"] };
+function rKasutus() {
+  $("#kasutus-body").innerHTML = `
+  <p class="lead">Kümme kasutusjuhtu ideekavandi töötubadeks. Igal real on kasutaja, küsimus, sisendid, väljundid ja mootori funktsioon. Töötoas saab iga kasutusjuhtu eelmudelis kohe proovida ja arutada, mida kaksik peab lisama.</p>
+  <div class="tw"><table><thead><tr><th>Kood</th><th>Kasutusjuht</th><th>Kasutaja</th><th>Küsimus</th><th>Sisend</th><th>Väljund</th><th>Seis</th><th>Kaksik lisab</th></tr></thead><tbody>
+  ${D.usecases.rows.map(r => `<tr><td class="mono">${r.id}</td><td class="tx" style="min-width:150px"><a href="#${r.section}">${esc(r.name)}</a><br><code>${esc(r.module)}</code></td><td class="tx" style="min-width:140px">${esc(r.who)}</td><td class="tx">${esc(r.q)}</td><td class="tx muted" style="min-width:160px">${esc(r.in)}</td><td class="tx muted" style="min-width:180px">${esc(r.out)}</td><td><span class="pill ${USEST[r.status][0]}">${USEST[r.status][1]}</span></td><td class="tx muted">${esc(r.twin)}</td></tr>`).join("")}
+  </tbody></table></div>`;
+}
+
+/* 09 Andmed */
+const DF = { group:"", status:"" };
+const DST = { olemas:["ok","olemas"], hinnang:["warn","hinnang"], puudub:["crit","puudub"] }, DPER = { ei:["mut","ei"], pseud:["info","pseudonüümitud"], jah:["crit","jah"] };
+function rAndmed() {
+  const F = D.dictionary.fields, rows = D.dictionary.rows.map(r => Object.fromEntries(F.map((k, i) => [k, r[i]])));
+  const groups = [...new Set(rows.map(r => r.group))], cnt = k => rows.filter(r => r.status === k).length, per = rows.filter(r => r.personal !== "ei").length;
+  const vis = rows.filter(r => (!DF.group || r.group === DF.group) && (!DF.status || r.status === DF.status));
+  $("#andmed-body").innerHTML = `
+  <p class="lead">Iga näitaja kohta on kirjas praegune avaandmete allikas eelmudelis ja digitaalse kaksiku sihtallikas. Tabel on ideekavandi andmeallikate kaardistuse (kuud 2–5) ja andmekaitse mõjuhinnangu lähtematerjal.</p>
+  <div class="kpis">
+    <div class="kpi"><span class="lab">Näitajaid</span><b>${rows.length}</b><small>${groups.length} valdkonda</small></div>
+    <div class="kpi"><span class="lab">Eelmudelis olemas</span><b class="pos">${cnt("olemas")}</b><small>avaandmetest</small></div>
+    <div class="kpi"><span class="lab">Hinnang</span><b>${cnt("hinnang")}</b><small>tuletatud või proksi</small></div>
+    <div class="kpi"><span class="lab">Andmelüngad</span><b class="neg">${cnt("puudub")}</b><small>vajavad kaksikut</small></div>
+    <div class="kpi"><span class="lab">Isikuandmed kaksikus</span><b>${per}</b><small>pseudonüümitud või agregeeritud</small></div>
+  </div>
+  <div class="box flat" style="flex-direction:row;flex-wrap:wrap;align-items:end;gap:12px 16px">
+    <div class="f"><label for="dfG">Valdkond</label><select id="dfG"><option value="">kõik</option>${groups.map(g => `<option ${g === DF.group ? "selected" : ""}>${esc(g)}</option>`).join("")}</select></div>
+    <div class="f"><label for="dfS">Seis</label><select id="dfS"><option value="">kõik</option>${Object.keys(DST).map(k => `<option value="${k}" ${k === DF.status ? "selected" : ""}>${DST[k][1]}</option>`).join("")}</select></div>
+    <span class="small muted">${vis.length} rida · fail <code>data/dictionary.json</code></span>
+  </div>
+  <div class="tw"><table><thead><tr><th>Kood</th><th>Näitaja</th><th>Tase</th><th>Praegune allikas</th><th>Periood</th><th>Kaksiku sihtallikas</th><th>Isikuandmed</th><th>Seis</th><th>Märkus</th></tr></thead><tbody>
+  ${vis.map(r => `<tr><td class="mono">${r.id}</td><td class="tx" style="min-width:200px"><b>${esc(r.name)}</b><br><span class="small muted">${esc(r.unit)} · ${esc(r.modules)}</span></td><td>${esc(r.level)}</td><td class="tx" style="min-width:150px">${esc(r.src)}${r.table && r.table !== "–" ? `<br><code>${esc(r.table)}</code>` : ""}</td><td class="small">${esc(r.period)}<br><span class="muted">${esc(r.update)}</span></td><td class="tx" style="min-width:200px">${esc(r.target)}</td><td><span class="pill ${DPER[r.personal][0]}">${DPER[r.personal][1]}</span></td><td><span class="pill ${DST[r.status][0]}">${DST[r.status][1]}</span></td><td class="tx muted small">${esc(r.note)}</td></tr>`).join("")}
+  </tbody></table></div>`;
+  $("#dfG").onchange = e => { DF.group = e.target.value; rAndmed(); }; $("#dfS").onchange = e => { DF.status = e.target.value; rAndmed(); };
+}
+
+/* 10 Mootor */
+function rMootor() {
+  const pass = TESTS.filter(t => t.ok).length;
+  $("#mootor-body").innerHTML = `
+  <p class="lead">Arvutusmootor on eraldi fail <code>engine.js</code>, mis töötab nii brauseris kui ka Node'is. Kõik funktsioonid on puhtad: sisend on andmeobjekt ja parameetrid, väljund uus objekt. Arendaja saab selle võtta kaksiku prognoosimooduli referentsiks ja kontrollida oma lahendust samade testidega.</p>
+  <div class="box"><div class="boxh"><h3>Enesetest</h3><span class="pill ${pass === TESTS.length ? "ok" : "crit"}">${pass} / ${TESTS.length} läbitud</span></div>
+  <div class="tw"><table><thead><tr><th>Test</th><th>Kontroll</th><th>Tulemus</th><th>Detail</th></tr></thead><tbody>
+  ${TESTS.map(t => `<tr><td class="mono">${t.id}</td><td class="tx">${esc(t.name)}</td><td><span class="pill ${t.ok ? "ok" : "crit"}">${t.ok ? "läbitud" : "ebaõnnestus"}</span></td><td class="tx mono small">${esc(t.detail)}</td></tr>`).join("")}
+  </tbody></table></div><p class="note">Testid T1–T6 võrdlevad mootorit põhimudeli (Raplamaa juhtimiskeskus v6) väljunditega failis <code>data/reference.json</code>. Testid jooksevad iga lehe avamisel uuesti; Node'is käivitab samad testid <code>node engine.test.js</code>. T7 märgib, et Statistikaameti vanuserühmade summa erineb mõnel aastal rahvaarvust 1–3 inimese võrra.</p></div>
+  <div class="box flat"><div class="boxh"><h3>Funktsioonid</h3><span class="small muted">mootori versioon ${esc(E.VERSION)}</span></div>
+  <div class="tw"><table><thead><tr><th>Funktsioon</th><th>Sisend</th><th>Väljund</th><th>Kirjeldus</th></tr></thead><tbody>
+  ${E.API.map(a => `<tr><td><code>${esc(a.fn)}</code></td><td class="tx small">${esc(a.in)}</td><td class="tx small">${esc(a.out)}</td><td class="tx small muted">${esc(a.desc)}</td></tr>`).join("")}
+  </tbody></table></div></div>
+  <div class="box flat"><div class="boxh"><h3>Failid</h3></div>
+  <div class="tw"><table><thead><tr><th>Fail</th><th>Sisu</th></tr></thead><tbody>
+  ${[["engine.js","Arvutusmootor (referentsimplementatsioon)"],["engine.test.js","Enesetestide käivitaja Node'is"],["data/kov.json","Omavalitsuste konfiguratsioon ja mudeli parameetrid"],["data/pop.json","Rahvastik vanuserühmade kaupa, sünnid, surmad, ränne (RV0282U, RV112U, RV49U, RVR02)"],["data/fin.json","Eelarve täitmine (RR300), tulumaks kuude kaupa (MTA), eelarvestrateegiad"],["data/edu.json","Lasteaialapsed, õpilased, koolid ja nende asulad"],["data/ext.json","Välisrände saldo, oodatav eluiga, eluruumid, pendelränne, tegevusalade kulud, prognoosid"],["data/settlements.json","Rahvastik asulate kaupa (REL 2021, RL21003)"],["data/dictionary.json","Andmesõnastik ja allikakaart"],["data/usecases.json","Kasutusjuhtude kataloog"],["data/reference.json","Põhimudeli väljundid testide jaoks"]].map(r => `<tr><td><code>${r[0]}</code></td><td>${esc(r[1])}</td></tr>`).join("")}
+  </tbody></table></div></div>`;
+}
+
+/* 11 Konfiguratsioon */
+function rKonf() {
+  $("#konf-body").innerHTML = `
+  <p class="lead">Omavalitsused tulevad failist <code>data/kov.json</code>. Mootor ei sisalda ühtegi valla nime; kõik arvutused käivad konfiguratsiooni järgi. Rae vald on lisatud just nii, ilma koodi muutmata.</p>
+  <div class="tw"><table><thead><tr><th>Id</th><th>Nimi</th><th>Piirkond</th><th>Eluea viide</th><th>Haridusandmed</th><th>Maakonnas</th><th>Pilootvald</th><th>Arengukava siht</th></tr></thead><tbody>
+  ${unitsAll().map(u => `<tr><td class="mono">${u.id}</td><td>${dot(u.id)}${esc(u.name)}</td><td class="mono">${u.region}</td><td>${esc(u.e0Ref)} maakond</td><td>${u.edu === "hinnang" ? '<span class="pill warn">hinnang</span>' : '<span class="pill ok">andmed</span>'}</td><td>${u.inMaak ? "jah" : "ei"}</td><td>${u.pilot ? '<span class="pill dev">jah</span>' : "–"}</td><td>${u.target ? f0(u.target.pop) + " (" + u.target.year + ")" : '<span class="muted">puudub</span>'}</td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="g2">
+    <div class="box flat"><h3>Uue omavalitsuse lisamine</h3><ol class="steps">
+      <li>Lisa kirje faili <code>data/kov.json</code>: id, nimi, värv, piirkond ja eluea viitemaakond.</li>
+      <li>Lisa rahvastikuandmed faili <code>data/pop.json</code> samade Statistikaameti tabelitega (RV0282U, RV112U, RV49U, RVR02).</li>
+      <li>Lisa eelarve täitmine (RR300) faili <code>data/fin.json</code> ning välisrände saldo, pendelränne ja eluruumid faili <code>data/ext.json</code>.</li>
+      <li>Lisa asulad (RL21003) faili <code>data/settlements.json</code> ja koolidega asulad faili <code>data/edu.json</code>.</li>
+      <li>Kui haridusandmeid ei ole, märgi <code>"edu":"hinnang"</code>; mootor kasutab siis proksi osalusmäära.</li>
+      <li>Ava leht: enesetest kontrollib andmete kooskõla ja uue omavalitsuse projektsiooni.</li>
+    </ol></div>
+    <div class="box flat"><h3>Rae vald pilootvallana</h3>
+      <p class="small">Rae andmed on päritud Statistikaameti API-st 09.10.2026: rahvastik 2015–2026, sünnid, surmad, ränne, eelarve täitmine 2017–2025, eluruumid, pendelränne ja asulad. Rae kuulub omaette piirkonda, nii et sündimuse ja eluea trend arvutatakse Rae ja Harju maakonna andmetest, mitte Raplamaa omadest.</p>
+      <p class="small muted">Hinnangud, mis vajavad Rae vallalt andmeid: lasteaialaste ja õpilaste arv (praegu Kohila osalusmäära järgi), tegevusalade ühikukulud (Kohila järgi), tulumaksu 2026 kuuandmed, eelarvestrateegia ja netovõlg, kohtade arv asutuste kaupa ning arengukava rahvaarvu siht.</p>
+      <p class="small muted">Rae koolid (vallavalitsuse määrus nr 4, 23.01.2024): ${esc(D.edu.raeSchools.join(", "))}.</p></div>
+  </div>`;
+}
+
+/* ---------- juhtimine ---------- */
+function renderAll() {
+  projCache.clear();
+  [rYlevaade, rRahvastik, rElamu, rInvest, rOtsus, rLiikuvus, rTapsus].forEach(f => { try { f(); } catch (e) { console.error(f.name, e); } });
+}
+function bar() {
+  const opts = [...D.kov.aggregates.map(a => ({ ...a, agg: true })), ...unitsAll()];
+  $("#unitSeg").innerHTML = opts.map(u => `<button type="button" data-u="${u.id}" aria-pressed="${u.id === S.unit}" style="--c:${u.color}"><i></i>${esc(u.short)}${u.pilot ? "<sup>pilot</sup>" : ""}</button>`).join("");
+  $("#unitSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return; S.unit = b.dataset.u; [...$("#unitSeg").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.u === S.unit)); HI.unit = null; OT.unit = null; renderAll(); };
+  $("#migSel").innerHTML = Object.entries(D.kov.params.migPatterns).map(([k, v]) => `<option value="${k}" ${k === S.mig ? "selected" : ""}>${v}</option>`).join("");
+  $("#migSel").onchange = e => { S.mig = e.target.value; renderAll(); };
+  $("#extraIn").onchange = e => { S.extra = +e.target.value || 0; renderAll(); };
+  $("#fertIn").oninput = e => { S.fert = +e.target.value; $("#fertOut").textContent = (S.fert > 0 ? "+" : S.fert < 0 ? "−" : "±") + Math.abs(S.fert) + "%"; };
+  $("#fertIn").onchange = () => renderAll();
+  $("#bar").hidden = false;
+}
+async function boot() {
+  try {
+    const got = await Promise.all(FILES.map(f => fetch("data/" + f + ".json").then(r => { if (!r.ok) throw new Error("data/" + f + ".json: " + r.status); return r.json(); })));
+    D = Object.fromEntries(FILES.map((f, i) => [f, got[i]]));
+    ctx = E.build({ kov: D.kov, pop: D.pop, fin: D.fin, edu: D.edu, ext: D.ext, settlements: D.settlements });
+    TESTS = E.selfTest(ctx, D.reference);
+  } catch (err) {
+    $("#app").className = ""; $("#app").innerHTML = `<div class="loaderr">Andmefailide laadimine ebaõnnestus: ${esc(err.message)}. Värskenda lehte; kui viga jääb, on andmefail puudu.</div>`; console.error(err); return;
+  }
+  const pass = TESTS.filter(t => t.ok).length;
+  $("#hdrBadges").innerHTML = `<span class="badge ${pass === TESTS.length ? "ok" : "bad"}">Testid ${pass}/${TESTS.length}</span><span class="badge">Mootor <b>${esc(E.VERSION.split(" ")[0])}</b></span><span class="badge">Andmed <b>09.10.2026</b></span><a class="badge" href="https://claude.ai/artifact/1z4kbsLU2uneuJwJYuNVfG" target="_blank" rel="noopener">Põhimudel ↗</a>`;
+  shell(); bar(); renderAll(); rKasutus(); rAndmed(); rMootor(); rKonf();
+  let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(renderAll, 250); });
+  if (location.hash) { const el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
+}
+boot();
+})();
+</script>
