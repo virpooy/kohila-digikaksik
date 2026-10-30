@@ -1,22 +1,160 @@
 {
   "_doc": "Omavalitsuste konfiguratsioon. Uue omavalitsuse lisamiseks lisa siia kirje ja täida pop.json, fin.json ning ext.json sama võtmega. Väljad: region = rühm, mille kohta arvutatakse sündimuse trend ja eluea trend (e0Ref = Statistikaameti RV0452 maakond); edu = haridusandmete allikas ('edu.json' või 'hinnang'); target = arengukava rahvaarvu siht; pilot = kas tegu on digitaalse kaksiku pilootvallaga; inMaak = kas kuulub Rapla maakonna summasse.",
   "units": [
-    {"id":"Rapla","name":"Rapla vald","short":"Rapla","color":"#2F6FB0","region":"RAPLA","e0Ref":"Rapla","edu":"edu.json","inMaak":true,"pilot":false,"target":{"pop":15000,"year":2035,"src":"Rapla valla arengukava 2035"},"ehak":"0669"},
-    {"id":"Kohila","name":"Kohila vald","short":"Kohila","color":"#1E8C6E","region":"RAPLA","e0Ref":"Rapla","edu":"edu.json","inMaak":true,"pilot":true,"target":{"pop":10000,"year":2035,"src":"Kohila valla arengukava 2023–2035"},"ehak":"0317"},
-    {"id":"Marjamaa","name":"Märjamaa vald","short":"Märjamaa","color":"#8A5BB8","region":"RAPLA","e0Ref":"Rapla","edu":"edu.json","inMaak":true,"pilot":false,"target":null,"ehak":null},
-    {"id":"Kehtna","name":"Kehtna vald","short":"Kehtna","color":"#C2577F","region":"RAPLA","e0Ref":"Rapla","edu":"edu.json","inMaak":true,"pilot":false,"target":{"pop":6000,"year":2035,"src":"Kehtna valla arengukava 2035"},"ehak":null},
-    {"id":"Rae","name":"Rae vald","short":"Rae","color":"#B8762A","region":"RAE","e0Ref":"Harju","edu":"hinnang","inMaak":false,"pilot":true,"target":null,"ehak":"0653"}
+    {
+      "id": "Rapla",
+      "name": "Rapla vald",
+      "short": "Rapla",
+      "color": "#2F6FB0",
+      "region": "RAPLA",
+      "e0Ref": "Rapla",
+      "edu": "edu.json",
+      "inMaak": true,
+      "pilot": false,
+      "target": {
+        "pop": 15000,
+        "year": 2035,
+        "src": "Rapla valla arengukava 2035"
+      },
+      "ehak": "0669"
+    },
+    {
+      "id": "Kohila",
+      "name": "Kohila vald",
+      "short": "Kohila",
+      "color": "#1E8C6E",
+      "region": "RAPLA",
+      "e0Ref": "Rapla",
+      "edu": "edu.json",
+      "inMaak": true,
+      "pilot": true,
+      "target": {
+        "pop": 10000,
+        "year": 2035,
+        "src": "Kohila valla arengukava 2023–2035"
+      },
+      "ehak": "0317"
+    },
+    {
+      "id": "Marjamaa",
+      "name": "Märjamaa vald",
+      "short": "Märjamaa",
+      "color": "#8A5BB8",
+      "region": "RAPLA",
+      "e0Ref": "Rapla",
+      "edu": "edu.json",
+      "inMaak": true,
+      "pilot": false,
+      "target": null,
+      "ehak": null
+    },
+    {
+      "id": "Kehtna",
+      "name": "Kehtna vald",
+      "short": "Kehtna",
+      "color": "#C2577F",
+      "region": "RAPLA",
+      "e0Ref": "Rapla",
+      "edu": "edu.json",
+      "inMaak": true,
+      "pilot": false,
+      "target": {
+        "pop": 6000,
+        "year": 2035,
+        "src": "Kehtna valla arengukava 2035"
+      },
+      "ehak": null
+    },
+    {
+      "id": "Rae",
+      "name": "Rae vald",
+      "short": "Rae",
+      "color": "#B8762A",
+      "region": "RAE",
+      "e0Ref": "Harju",
+      "edu": "hinnang",
+      "inMaak": false,
+      "pilot": true,
+      "target": null,
+      "ehak": "0653"
+    }
   ],
   "aggregates": [
-    {"id":"MAAK","name":"Rapla maakond","short":"Maakond","color":"#5B6470","members":["Rapla","Kohila","Marjamaa","Kehtna"],"target":{"pop":35000,"year":2035,"src":"Raplamaa arengustrateegia 2035+"}}
+    {
+      "id": "MAAK",
+      "name": "Rapla maakond",
+      "short": "Maakond",
+      "color": "#5B6470",
+      "members": [
+        "Rapla",
+        "Kohila",
+        "Marjamaa",
+        "Kehtna"
+      ],
+      "target": {
+        "pop": 35000,
+        "year": 2035,
+        "src": "Raplamaa arengustrateegia 2035+"
+      }
+    }
   ],
   "params": {
     "start": 2026,
     "end": 2036,
-    "migPatterns": {"r1":"2016–2021","mean":"keskmine","r2":"2021–2026","r2x":"2021–26 ilma põgeniketa","r3":"2024–2026"},
+    "migPatterns": {
+      "r1": "2016–2021",
+      "mean": "keskmine",
+      "r2": "2021–2026",
+      "r2x": "2021–26 ilma põgeniketa",
+      "r3": "2024–2026"
+    },
     "defaultMig": "mean",
-    "wageGrowth": {"2027":5.5,"2028":5.0,"default":4.5},
+    "wageGrowth": {
+      "2027": 5.5,
+      "2028": 5.0,
+      "default": 4.5
+    },
     "employmentBase": 68.5,
-    "eduProxyFrom": "Kohila"
+    "eduProxyFrom": "Kohila",
+    "housing": {
+      "_doc": "Elamuarenduse eeldused (otsused E2–E4, docs/vordlus.md). hh = elanikke eluruumi kohta; kids = mõjukanga laste kordaja eluruumi kohta; laste osakaal uustulijate vanusprofiilis skaleeritakse suhtega (kids/hh) / keskmine(kids/hh). occ = täituvus; outside = väljastpoolt omavalitsust tulijate osa.",
+      "hh": {
+        "eramu": 3.0,
+        "ridaelamu": 2.8,
+        "korter": 2.1
+      },
+      "kids": {
+        "eramu": 1.5,
+        "ridaelamu": 1.4,
+        "korter": 1.0
+      },
+      "occ": 0.95,
+      "outside": 0.7
+    },
+    "prices": {
+      "_doc": "Investeeringu hind koha kohta, € (otsus E8).",
+      "la": 30000,
+      "sc": 25000
+    },
+    "loan": {
+      "_doc": "Lisalaenu eeldused investeeringu katmiseks (otsus E10): intress % aastas, tagasimakse aastates (võrdsed põhiosad).",
+      "rate": 4.0,
+      "years": 20
+    },
+    "tf": {
+      "_doc": "Tasandusfondi kadu (otsus E6): osa lisanduvast tulumaksust 2026. aasta hindades, lagi = omavalitsuse 2026. aasta tasandusfond.",
+      "share": 0.3,
+      "cap": {
+        "Kohila": 649820
+      }
+    },
+    "margCost": {
+      "_doc": "Valla piirkulu € aastas (otsus E5): lasteaialaps, õpilane, muu kulu elaniku kohta. Allikas: Planeeringute mõjukangas (VV määrus 12.01.2026 nr 1-1/1; Kohila G 117 €/kuu; 50% mitte-hariduse põhitegevuse kulust).",
+      "Kohila": {
+        "la": 5950,
+        "sc": 1400,
+        "res": 410
+      }
+    }
   }
 }

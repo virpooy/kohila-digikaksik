@@ -150,7 +150,7 @@
     const tot = sum(reg.members.map(m => ctx.data.pop[m].tot[String(p.start)])), share = pop.tot[String(p.start)] / tot;
     const base = (p.R || C[p.mig]).map((x, g) => x + (p.extra * share + p.vx) * GEN[g]);
     const kf = y => C.k * mortMul(ctx, u.region, y, p), ff = y => C.f * (1 + p.fert / 100) * fertMul(ctx, u.region, y, p);
-    const addFn = p.add ? (y, R) => { const a = p.add[y + 1] || 0; return a ? R.map((x, g) => x + a * GEN[g]) : R; } : null;
+    const addFn = p.add ? (y, R) => { const a = p.add[y + 1] || 0; return a ? R.map((x, g) => x + a * (p.addProf || GEN)[g]) : R; } : null;
     return projectFrom(pop, p.start, p.end, base, ff, kf, null, addFn);
   }
   /** Agregaadi (nt maakond) projektsioon liikmete summana. */
@@ -219,59 +219,101 @@
   const agesFn = (ctx, id, P) => y => y <= ctx.cfg.start ? ageOf(ctx.data.pop[id], y) : P[y];
 
   /* ---------------- Kasutusjuht: elamuarendus ---------------- */
-  const HH = { korter: 2.1, ridaelamu: 2.8, eramu: 3.1 };
+  /* Vaikeväärtused, kui kov.json params.housing puudub (otsused E2–E4) */
+  const HOUSING = { hh: { eramu: 3.0, ridaelamu: 2.8, korter: 2.1 }, kids: { eramu: 1.5, ridaelamu: 1.4, korter: 1.0 }, occ: 0.95, outside: 0.7 };
+  const HH = HOUSING.hh;
+  const housingCfg = ctx => ({ ...HOUSING, ...(ctx.cfg.housing || {}) });
+  /** Uustulijate vanusprofiil elamutüübi järgi: GEN, mille laste rühmad (0–19) on skaleeritud suhtega (kids/hh) / keskmine(kids/hh) ja summa normeeritud 1-le. */
+  function newcomerProfile(ctx, type) {
+    const H = housingCfg(ctx), T = Object.keys(H.hh), ratio = t => (H.kids[t] || 1) / H.hh[t], avg = sum(T.map(ratio)) / T.length;
+    const s = H.hh[type] ? ratio(type) / avg : 1, prof = GEN.map((x, g) => g <= 3 ? x * s : x), tot = sum(prof);
+    return { prof: prof.map(x => x / tot), childScale: s };
+  }
+  /** Investeeringu hinnad ja kohtade arv: sisend → konfiguratsioon → praegune laste/õpilaste arv. */
+  function capOf(ctx, id, o) {
+    const B = ctx.eduBase[id], C = (ctx.data.edu.cap || {})[id] || {}, Pr = ctx.cfg.prices || {};
+    return { la: o && o.la != null ? o.la : C.la != null ? C.la : B.la, sc: o && o.sc != null ? o.sc : C.sc != null ? C.sc : B.pk + B.g,
+      priceLa: o && o.priceLa || Pr.la || 30000, priceSc: o && o.priceSc || Pr.sc || 25000, src: C.la != null ? C.src || "edu.json cap" : "praegune laste ja õpilaste arv" };
+  }
   /**
    * housingImpact(ctx, id, inp, params)
    * inp = { n: eluruume, type: korter|ridaelamu|eramu, start: esimene asustamise aasta, years: asustamise kestus,
    *         hh: leibkonna suurus (vaikimisi tüübi järgi), occ: täituvus 0–1, outside: väljastpoolt omavalitsust tulijate osakaal 0–1,
    *         settlement: asula nimi (valikuline), capLa, capSc: kohtade arv (valikuline), priceLa, priceSc: € koha kohta }
+   * Väljund aastate kaupa: rahvastik, lapsed, tulumaks (nominaalne ja 2026. a hindades), täiskulu (RR302), valla piirkulu (E5),
+   * tasandusfondi kadu (E6) ning neto täis- ja piirkuluga.
    */
   function housingImpact(ctx, id, inp, params) {
-    const p = { ...DEF, ...params }, hh = inp.hh || HH[inp.type] || 2.5, occ = inp.occ != null ? inp.occ : 0.95, out = inp.outside != null ? inp.outside : 0.7;
+    const H = housingCfg(ctx), p = { ...DEF, ...params };
+    const hh = inp.hh || H.hh[inp.type] || 2.5, occ = inp.occ != null ? inp.occ : H.occ, out = inp.outside != null ? inp.outside : H.outside;
     const years = Math.max(1, inp.years || 1), per = inp.n / years * hh * occ * out, add = {};
     for (let i = 0; i < years; i++) { const y = inp.start + i; if (y > p.start && y <= p.end) add[y] = (add[y] || 0) + per; }
-    const base = project(ctx, id, p), scen = project(ctx, id, { ...p, add });
+    const NP = newcomerProfile(ctx, inp.type);
+    const base = project(ctx, id, p), scen = project(ctx, id, { ...p, add, addProf: inp.hh ? null : NP.prof });
     const tb = taxSeries(ctx, id, agesFn(ctx, id, base), p), ts = taxSeries(ctx, id, agesFn(ctx, id, scen), p);
-    const uc = ctx.uc[id], com = ctx.data.ext.COM[id], tlnShare = com ? com.tln / com.t : 0, empRate = 0.75;
+    const uc = ctx.uc[id], mc = (ctx.cfg.margCost || {})[id] || null, TF = ctx.cfg.tf || { share: 0, cap: {} }, tfCap = (TF.cap || {})[id];
+    const com = ctx.data.ext.COM[id], tlnShare = com ? com.tln / com.t : 0, empRate = 0.75;
     const rows = [];
     for (let y = p.start; y <= p.end; y++) {
       const db = eduDemand(ctx, id, base[y]), ds = eduDemand(ctx, id, scen[y]);
       const dPop = total(scen[y]) - total(base[y]), dLa = ds.la - db.la, dSc = ds.sc - db.sc, dPk = ds.pk - db.pk;
       const dO80 = (scen[y][16] + scen[y][17]) - (base[y][16] + base[y][17]), dW = sumG(scen[y], 4, 12) - sumG(base[y], 4, 12);
+      const dTax = ts[y] - tb[y], dTaxR = dTax / wageIdx(ctx, y, p);
+      const dTf = Math.min(tfCap != null ? tfCap : Infinity, Math.max(0, dTaxR) * (TF.share || 0));
+      const dCost = dLa * uc.la + dSc * uc.sc + dO80 * uc.o80, dCostMarg = mc ? dLa * mc.la + dSc * mc.sc + dPop * mc.res : null;
       rows.push({ y, added: add[y] || 0, dPop, dLa, dSc, dPk, baseLa: db.la, baseSc: db.sc, scenLa: ds.la, scenSc: ds.sc,
-        dTax: ts[y] - tb[y], dTaxR: (ts[y] - tb[y]) / wageIdx(ctx, y, p), dCost: dLa * uc.la + dSc * uc.sc + dO80 * uc.o80, dWorkers: dW * empRate, dTln: dW * empRate * tlnShare });
+        dTax, dTaxR, dTf, dCost, dCostMarg, dNet: dTaxR - dTf - dCost, dNetMarg: mc ? dTaxR - dTf - dCostMarg : null,
+        dWorkers: dW * empRate, dTln: dW * empRate * tlnShare });
     }
     const peak = k => rows.reduce((m, r) => r[k] > m[k] ? r : m, rows[0]);
-    const capLa = inp.capLa != null ? inp.capLa : ctx.eduBase[id].la, capSc = inp.capSc != null ? inp.capSc : ctx.eduBase[id].pk + ctx.eduBase[id].g;
+    const K = capOf(ctx, id, { la: inp.capLa, sc: inp.capSc, priceLa: inp.priceLa, priceSc: inp.priceSc }), capLa = K.la, capSc = K.sc;
     const shortLa = Math.max(0, ...rows.map(r => r.scenLa - capLa)), shortSc = Math.max(0, ...rows.map(r => r.scenSc - capSc));
     const shortLaBase = Math.max(0, ...rows.map(r => r.baseLa - capLa)), shortScBase = Math.max(0, ...rows.map(r => r.baseSc - capSc));
-    const priceLa = inp.priceLa || 30000, priceSc = inp.priceSc || 25000;
+    const priceLa = K.priceLa, priceSc = K.priceSc;
     const firstShort = (k, cap) => { const r = rows.find(r => r[k] > cap); return r ? r.y : null; };
     const st = settlementInfo(ctx, id, inp.settlement);
-    return { inp: { ...inp, hh, occ, outside: out }, newcomers: sum(Object.values(add)), rows,
+    return { inp: { ...inp, hh, occ, outside: out }, newcomers: sum(Object.values(add)), childScale: inp.hh ? 1 : NP.childScale, rows,
       peakLa: peak("dLa"), peakSc: peak("dSc"), last: rows[rows.length - 1],
-      cap: { la: capLa, sc: capSc, shortLa, shortSc, shortLaBase, shortScBase, firstLa: firstShort("scenLa", capLa), firstSc: firstShort("scenSc", capSc), firstLaBase: firstShort("baseLa", capLa), firstScBase: firstShort("baseSc", capSc),
+      cap: { la: capLa, sc: capSc, src: K.src, shortLa, shortSc, shortLaBase, shortScBase, firstLa: firstShort("scenLa", capLa), firstSc: firstShort("scenSc", capSc), firstLaBase: firstShort("baseLa", capLa), firstScBase: firstShort("baseSc", capSc),
         investLa: Math.max(0, shortLa - shortLaBase) * priceLa, investSc: Math.max(0, shortSc - shortScBase) * priceSc, priceLa, priceSc },
-      settlement: st, tlnShare, ucSrc: uc.src, eduSrc: ctx.eduBase[id].src, taxSrc: ctx.tax.T[id].src };
+      settlement: st, tlnShare, ucSrc: uc.src, margSrc: mc ? "valla piirkulu (kov.json margCost)" : null, tf: { share: TF.share || 0, cap: tfCap != null ? tfCap : null },
+      eduSrc: ctx.eduBase[id].src, taxSrc: ctx.tax.T[id].src };
   }
 
   /* ---------------- Kasutusjuht: investeeringuvajadus ---------------- */
   /** investNeed: võrdleb nõudlust kohtade arvuga aastate kaupa ja annab puudujäägi, esimese puudujäägi aasta ja investeeringu hinnangu. */
   function investNeed(ctx, id, P, cap) {
-    const B = ctx.eduBase[id], capLa = cap && cap.la != null ? cap.la : B.la, capSc = cap && cap.sc != null ? cap.sc : B.pk + B.g;
-    const priceLa = cap && cap.priceLa || 30000, priceSc = cap && cap.priceSc || 25000, rows = [];
+    const K = capOf(ctx, id, cap), capLa = K.la, capSc = K.sc, priceLa = K.priceLa, priceSc = K.priceSc, rows = [];
     for (let y = ctx.cfg.start; y <= ctx.cfg.end; y++) { const d = eduDemand(ctx, id, P[y]); rows.push({ y, la: d.la, sc: d.sc, gapLa: d.la - capLa, gapSc: d.sc - capSc }); }
     const maxLa = Math.max(...rows.map(r => r.gapLa)), maxSc = Math.max(...rows.map(r => r.gapSc));
     const fy = k => { const r = rows.find(r => r[k] > 0.5); return r ? r.y : null; };
-    return { capLa, capSc, rows, maxGapLa: maxLa, maxGapSc: maxSc, firstLa: fy("gapLa"), firstSc: fy("gapSc"),
+    return { capLa, capSc, capSrc: K.src, rows, maxGapLa: maxLa, maxGapSc: maxSc, firstLa: fy("gapLa"), firstSc: fy("gapSc"),
       investLa: Math.max(0, maxLa) * priceLa, investSc: Math.max(0, maxSc) * priceSc, priceLa, priceSc,
       surplusLa: -Math.min(...rows.map(r => r.gapLa)), surplusSc: -Math.min(...rows.map(r => r.gapSc)) };
   }
-  /** Investeeringu mõju netovõlakoormusele (% põhitegevuse tuludest 2025), kui investeering kaetakse laenuga. */
+  /**
+   * debtPath(ctx, id, invest, o) — otsus E10. Võtab netovõla, tulud ja tegevustulemi eelarvestrateegiast (fin.json BUD)
+   * ning lisab investeeringu katteks laenu aastal o.year (vaikimisi esimene prognoosiaasta), mida makstakse tagasi võrdsete
+   * põhiosadega o.years aasta jooksul intressiga o.rate %. Tagastab aastate kaupa netovõla, netovõlakoormuse ja teeninduskulu.
+   */
+  function debtPath(ctx, id, invest, o) {
+    const B = ctx.data.fin.BUD[id]; if (!B || !B.net || !B.inc) return null;
+    const L = { ...(ctx.cfg.loan || { rate: 4, years: 20 }), ...(o || {}) }, y0 = L.year || ctx.cfg.start;
+    const rows = B.y.map((y, i) => {
+      const t = y - y0, paid = t < 0 ? 0 : Math.min(L.years, t) * invest / L.years, bal = t < 0 ? 0 : invest - paid;
+      const princ = t >= 1 && t <= L.years ? invest / L.years : 0, intr = t >= 1 ? (bal + princ) * L.rate / 100 : 0;
+      const net = B.net[i] + bal;
+      return { y, lab: B.lab ? B.lab[i] : null, inc: B.inc[i], res: B.res ? B.res[i] : null, netBase: B.net[i], net, ratioBase: B.net[i] / B.inc[i], ratio: net / B.inc[i],
+        service: princ + intr, princ, intr, resAfter: B.res ? B.res[i] - intr : null };
+    });
+    return { invest, year: y0, rate: L.rate, years: L.years, doc: B.doc, st: B.st || null, rows };
+  }
+  /** Investeeringu mõju netovõlakoormusele (eelarvestrateegia esimese prognoosiaasta tuludest). Säilitatud ühilduvuseks; vt debtPath. */
   function debtEffect(ctx, id, invest) {
-    const F = ctx.data.fin.FINS[id].n1, inc = F[F.length - 1] * 1000, B = ctx.data.fin.BUD[id];
-    const net = B && B.net ? B.net[B.y.indexOf(2025)] : null;
-    return { inc, net, before: net != null ? net / inc : null, after: net != null ? (net + invest) / inc : null, add: invest / inc };
+    const D = debtPath(ctx, id, invest), B = ctx.data.fin.BUD[id];
+    if (!D) { const F = ctx.data.fin.FINS[id].n1, inc = F[F.length - 1] * 1000; return { inc, net: null, before: null, after: null, add: invest / inc, path: null }; }
+    const r = D.rows.find(r => r.y === D.year) || D.rows[0];
+    return { inc: r.inc, net: r.netBase, before: r.ratioBase, after: r.ratio, add: invest / r.inc, path: D, maxRatio: Math.max(...D.rows.map(x => x.ratio)) };
   }
 
   /* ---------------- Kasutusjuht: siht ja vajalik ränne ---------------- */
@@ -419,13 +461,26 @@
     ok("T10", "Mehaanika: tegeliku 2021–2026 rändega kordab mudel 2026. aastat alla 0,5% veaga", maxi < 0.005, "suurim viga " + (maxi * 100).toFixed(2) + "%");
     let maxs = 0; Object.keys(ctx.units).forEach(u => { const L = settlementLayer(ctx, u, project(ctx, u, {}), 2036); if (L) maxs = Math.max(maxs, Math.abs(sum(L.map(r => r.share)) - 1)); });
     ok("T11", "Asulakiht: osakaalud summeeruvad 100%-ni", maxs < 1e-9, "suurim kõrvalekalle " + maxs.toExponential(1));
+    // T12–T15: etapp 2 (otsused E1–E10)
+    let maxp = 0, np = 0; if (ref.proj) Object.keys(ref.proj).forEach(key => { const [mig, fertTr, mort] = key.split("|"); Object.keys(ref.proj[key]).forEach(u => { const P = project(ctx, u, { mig, fertTr, mort }); Object.keys(ref.proj[key][u]).forEach(y => ref.proj[key][u][y].forEach((x, g) => { maxp = Math.max(maxp, Math.abs(P[y][g] - x)); np++; })); }); });
+    ok("T12", "Kõik 10 stsenaariumi (5 rändemustrit × sündimuse ja eluea trend) kattuvad põhimudeli v6-ga igal aastal ja vanuserühmas", np > 0 && maxp < 1e-6, np + " väärtust, suurim erinevus " + maxp.toExponential(1));
+    const hcfg = (ctx.cfg.housing || HOUSING).hh, mk = (n, type) => housingImpact(ctx, "Kohila", { n, type, start: 2028, years: 2, occ: 1, outside: 0.72 }, {});
+    const nc = mk(40, "eramu").newcomers + mk(20, "ridaelamu").newcomers + mk(40, "korter").newcomers, ncRef = (40 * hcfg.eramu + 20 * hcfg.ridaelamu + 40 * hcfg.korter) * 0.72;
+    ok("T13", "Elamuarendus: uute elanike arv kattub mõjukangaga samade eeldustega (100 eluruumi, 72% arvesse)", near(nc, ncRef, 1e-9) && near(ncRef, 187.2, 1e-9), "kaksik " + nc.toFixed(1) + ", mõjukangas 187,2");
+    const hk = mk(40, "korter"), TFc = ctx.cfg.tf || {}, mcK = (ctx.cfg.margCost || {}).Kohila;
+    const tfOk = hk.rows.every(r => near(r.dTf, Math.min((TFc.cap || {}).Kohila != null ? TFc.cap.Kohila : Infinity, Math.max(0, r.dTaxR) * (TFc.share || 0)), 1e-9));
+    const mOk = !mcK || hk.rows.every(r => near(r.dCostMarg, r.dLa * mcK.la + r.dSc * mcK.sc + r.dPop * mcK.res, 1e-9) && near(r.dNet, r.dTaxR - r.dTf - r.dCost, 1e-9));
+    ok("T14", "Tasandusfondi kadu (E6), piirkulu (E5) ja neto arvutuvad otsuste järgi", tfOk && mOk, "tasandusfond " + Math.round((TFc.share || 0) * 100) + "% lisanduvast tulumaksust, piirkulu " + (mcK ? mcK.la + " / " + mcK.sc + " / " + mcK.res + " €" : "puudub"));
+    const D0 = debtPath(ctx, "Kohila", 0), D1 = debtPath(ctx, "Kohila", 1e6);
+    const dOk = D0 && D1 && D0.rows.every(r => near(r.net, r.netBase, 1e-6)) && near(D1.rows.find(r => r.y === D1.year).net - D1.rows.find(r => r.y === D1.year).netBase, 1e6, 1e-6) && D1.rows.every(r => r.net >= r.netBase - 1e-6);
+    ok("T15", "Võla rada (E10): ilma investeeringuta võrdub eelarvestrateegiaga, laen lisandub võlale ja väheneb põhiosamaksetega", dOk, D1 ? "1 mln € laen " + D1.year + ": teeninduskulu järgmisel aastal " + fmt(D1.rows.find(r => r.y === D1.year + 1).service) + " €" : "eelarvestrateegia puudub");
     return R;
   }
 
   /* ---------------- API kirjeldus ---------------- */
   const API = [
     { fn: "build(data)", in: "data = { kov, pop, fin, edu, ext, settlements }", out: "ctx: kalibreeritud omavalitsused, piirkonnad, maksu- ja hariduse baas, ühikukulud", desc: "Ehitab mudeli konteksti. Kutsutakse üks kord andmete laadimisel." },
-    { fn: "calibrate(pop, migV)", in: "ühe omavalitsuse rahvastikuandmed; välisrände saldo aastate kaupa", out: "{ k, f, fOld, fMid, r1, mean, r2, r2x, r3, uaExc, bal3 }", desc: "Suremustase, sündimus ja viis rändemustrit (vanuserühmade rändejääk aastas)." },
+    { fn: "calibrate(pop, migV)", in: "ühe omavalitsuse rahvastikuandmed; välisrände saldo aastate kaupa", out: "{ k, f, fOld, fMid, r1, mean, r2, r2x, r3, uaExc, bal3 }", desc: "Suremustase (2023–2025), sündimus ja viis rändemustrit: bilansiline kohordijääk üheaastaste vanuste mootoriga, registriparandus maha arvatud (põhimudel v6)." },
     { fn: "regionParams(pops, e0Series)", in: "piirkonna omavalitsuste andmed; oodatav eluiga aastate kaupa", out: "{ fslope, kc, e0m, e0sl, lam }", desc: "Sündimuse trend ja suremuse langus piirkonnas." },
     { fn: "project(ctx, id, params)", in: "params = { mig, extra, vx, add, fert, fertTr, mort, start, end }", out: "{ aasta: vanusevektor[18] }", desc: "Kohortprojektsioon ühe aasta sammuga. add lubab ajas muutuvat lisarännet (elamuarendus)." },
     { fn: "projectAgg(ctx, aggId, params)", in: "agregaadi id (nt MAAK)", out: "{ aasta: vanusevektor[18] }", desc: "Liikmete projektsioonide summa." },
@@ -433,9 +488,12 @@
     { fn: "eduDemand(ctx, id, ages)", in: "vanusevektor", out: "{ la, pk, g, sc }", desc: "Lasteaia- ja koolinõudlus vanusestruktuuri muutuse järgi." },
     { fn: "unitCosts(ctx, id)", in: "omavalitsus", out: "{ la, sc, o80, src } € aastas", desc: "Ühikukulud RR302 tegevusalade kuludest." },
     { fn: "taxSeries(ctx, id, ages, params)", in: "vanusevektori funktsioon aasta järgi; { wage, emp }", out: "{ aasta: € }", desc: "Füüsilise isiku tulumaks: palgaosa tööealiste ja palgakasvu, pensioniosa 65+ järgi." },
-    { fn: "housingImpact(ctx, id, inp, params)", in: "inp = { n, type, start, years, hh, occ, outside, settlement, capLa, capSc, priceLa, priceSc }", out: "{ rows[aasta]: dPop, dLa, dSc, dTax, dCost, dTln …, cap, settlement }", desc: "Elamuarenduse mõju rahvastikule, teenustele, eelarvele ja liikuvusele." },
+    { fn: "housingImpact(ctx, id, inp, params)", in: "inp = { n, type, start, years, hh, occ, outside, settlement, capLa, capSc, priceLa, priceSc }", out: "{ rows[aasta]: dPop, dLa, dSc, dTax, dTaxR, dTf, dCost, dCostMarg, dNet, dNetMarg, dTln …, cap, settlement, childScale }", desc: "Elamuarenduse mõju rahvastikule, teenustele, eelarvele ja liikuvusele." },
     { fn: "investNeed(ctx, id, P, cap)", in: "projektsioon; { la, sc, priceLa, priceSc }", out: "{ rows, maxGapLa, maxGapSc, firstLa, firstSc, investLa, investSc }", desc: "Kohtade puudujääk aastate kaupa ja investeeringu hinnang." },
-    { fn: "debtEffect(ctx, id, invest)", in: "investeering €", out: "{ before, after, add }", desc: "Laenuga kaetud investeeringu mõju netovõlakoormusele." },
+    { fn: "debtPath(ctx, id, invest, o)", in: "investeering €; o = { year, rate, years }", out: "{ rows: [{ y, net, ratio, service, princ, intr, resAfter }] }", desc: "Võla rada eelarvestrateegia järgi koos investeeringu laenu, tagasimakse ja intressiga (otsus E10)." },
+    { fn: "debtEffect(ctx, id, invest)", in: "investeering €", out: "{ before, after, add, path, maxRatio }", desc: "Laenuga kaetud investeeringu mõju netovõlakoormusele esimesel prognoosiaastal; täielik rada väljal path." },
+    { fn: "newcomerProfile(ctx, type)", in: "elamutüüp", out: "{ prof, childScale }", desc: "Uustulijate vanusprofiil: laste osa skaleeritud mõjukanga laste kordaja järgi (otsus E3)." },
+    { fn: "capOf(ctx, id, o)", in: "valikuline kohtade arv ja hinnad", out: "{ la, sc, priceLa, priceSc, src }", desc: "Kohtade arv ja investeeringu hinnad: sisend → edu.json cap → praegune arv (otsused E7, E8)." },
     { fn: "needExtra(ctx, id, target, year, params)", in: "sihtrahvaarv ja aasta", out: "inimesi aastas", desc: "Lisaränne, mis on vaja sihi saavutamiseks." },
     { fn: "settlementLayer(ctx, id, P, year)", in: "projektsioon ja aasta", out: "[{ n, share, pop, la, pk, school }]", desc: "Valla prognoos asulate kaupa REL 2021 osakaalude järgi." },
     { fn: "schoolAccess(ctx, id, P, year)", in: "projektsioon ja aasta", out: "{ pkOut, pkAll, share, rows }", desc: "Põhikooliealised asulates, kus kooli ei ole." },
@@ -445,7 +503,7 @@
   ];
 
   const TwinEngine = { VERSION, G, AGEL, MORT, GEN, HH, BANDS, laP, pkP, gP, sum, sumG, calibrate, regionParams, toSingle, toGroups, projectFrom, build, project, projectAgg, total,
-    eduBase, eduDemand, unitCosts, taxSeries, wageIdx, agesFn, housingImpact, investNeed, debtEffect, needExtra, settlementLayer, schoolAccess, settlementInfo,
+    eduBase, eduDemand, unitCosts, taxSeries, wageIdx, agesFn, housingImpact, newcomerProfile, capOf, investNeed, debtPath, debtEffect, needExtra, settlementLayer, schoolAccess, settlementInfo,
     backtest, decision, selfTest, API, fmt, eurT };
   if (typeof module !== "undefined" && module.exports) module.exports = TwinEngine; else root.TwinEngine = TwinEngine;
 })(typeof window !== "undefined" ? window : globalThis);

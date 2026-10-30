@@ -59,3 +59,34 @@ Koostatud 30.10.2026 (tööplaani ülesanne 6). Üksikasjalikud kaardistused on 
 - KAM: maksumaksjate arv on eri kohtades 3 945, ~3 950 ja 3 967; investeeringute pealkiri 4,13 mln €, projektide summa 4,09 mln €; investeeringutel selgitamata kordaja 1,02.
 - KAM: asutuste mahud kokku 470, mudeli lasteaiakohtade arv 520.
 - RAK: koodikommentaar ütleb suremuse kalibreerimine 2021–2025, kood kasutab 2023–2025.
+
+## Etapp 2 tulemus (30.10.2026, mootor 2.0.0)
+
+Kõik otsused E1–E8 ja E10 on mootoris. E9 (planeeringukontrolli väljad) jääb etappi 3, sest see muudab planeeringukontrolli rakendust.
+
+| Otsus | Kuidas mootoris | Kontroll |
+|---|---|---|
+| E1 | Üheaastaste vanuste kohortmootor, kalibreerimine ja rändemustrid nagu põhimudelis v6 | T1–T6, T12: 7 920 väärtust, erinevus 0 |
+| E2–E4 | `kov.json` params.housing: leibkond 3,0 / 2,8 / 2,1, laste kordaja 1,5 / 1,4 / 1,0, täituvus 0,95, väljastpoolt 70% | T13: samade eeldustega 187,2 uut elanikku nagu mõjukangas |
+| E5 | Täiskulu (RR302) ja valla piirkulu (`margCost`: 5 950 / 1 400 / 410 €) kõrvuti, neto mõlemaga | T14 |
+| E6 | Tasandusfondi kadu 30% lisanduvast tulumaksust 2026. a hindades, lagi 649 820 € | T14 |
+| E7 | Kohila 470 lasteaiakohta ja 1 010 koolikohta (`edu.json` cap) | lehel vaikeväärtusena |
+| E8 | 30 000 / 25 000 € koha kohta (`kov.json` prices) | – |
+| E10 | `debtPath`: netovõlg eelarvestrateegiast + investeeringu laen, võrdsed põhiosad 20 a, intress 4% | T15 |
+
+**Kohila põhinumbrid nüüd (vaikestsenaarium):** rahvaarv 7 844 → 8 145 (2031) → 8 418 (2036), sama mis põhimudelis. Lasteaialapsed 442 → 382, põhikooliõpilased 712 → 631.
+
+**100 eluruumi näide (40 eramut, 20 ridaelamut, 40 korterit, asustamine 2028–2029, kaksiku vaikeeeldused):**
+
+| | 2029 | 2031 | 2036 |
+|---|---|---|---|
+| Tulumaks, € (2026. a hindades) | 305 800 | 304 182 | 304 385 |
+| Tasandusfondi kadu | −91 740 | −91 255 | −91 316 |
+| Täiskulu (RR302) | −230 908 | −235 413 | −219 420 |
+| Piirkulu (mõjukangas) | −189 433 | −186 449 | −166 102 |
+| Neto täiskuluga | −16 848 | −22 486 | −6 351 |
+| Neto piirkuluga | +24 627 | +26 479 | +46 968 |
+
+11 aasta summa: neto täiskuluga −156 643 €, piirkuluga +270 873 €. Mõjukangas annab samale arendusele +139 135 € (piirkulu, täituvus 100%, 72% arvesse, palk 2 196 €). Uusi elanikke kaksikus 173 (täituvus 95%, arvesse 70%), mõjukangas 187.
+
+Järeldus otsustajale: kas arendus tasub end valla eelarvele ära, sõltub sellest, kas arvestada piirkulu või täiskulu. Kaksik näitab mõlemat.

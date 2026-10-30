@@ -318,11 +318,11 @@ function rElamu() {
     <div class="f"><label for="hiStart">Asustamine algab</label><input type="number" id="hiStart" data-k="start" min="2027" max="2036" value="${HI.start}"></div>
     <div class="f"><label for="hiYears">Asustamise kestus, a</label><input type="number" id="hiYears" data-k="years" min="1" max="8" value="${HI.years}"></div>
     <div class="f"><label for="hiSet">Asukoht (asula)</label><select id="hiSet" data-k="settlement"><option value="">täpsustamata</option>${sets.map(s => `<option ${s[0] === HI.settlement ? "selected" : ""}>${esc(s[0])}</option>`).join("")}</select></div>
-    <div class="f"><label for="hiHh">Elanikke leibkonnas</label><input type="number" id="hiHh" data-k="hh" step="0.1" min="1" max="5" placeholder="${E.HH[HI.type]}" value="${HI.hh}"><small>tühi = tüübi vaikeväärtus (hinnang)</small></div>
+    <div class="f"><label for="hiHh">Elanikke leibkonnas</label><input type="number" id="hiHh" data-k="hh" step="0.1" min="1" max="5" placeholder="${String((ctx.cfg.housing || {hh:E.HH}).hh[HI.type]).replace(".", ",")}" value="${HI.hh}"><small>tühi = tüübi vaikeväärtus (hinnang)</small></div>
     <div class="f"><label for="hiOcc">Täituvus, %</label><input type="number" id="hiOcc" data-k="occ" min="10" max="100" value="${HI.occ}"></div>
     <div class="f"><label for="hiOut">Tulijad väljastpoolt valda, %</label><input type="number" id="hiOut" data-k="outside" min="0" max="100" value="${HI.outside}"><small>vallasisene kolimine ei lisa elanikke</small></div>
-    <div class="f"><label for="hiCapLa">Lasteaiakohti</label><input type="number" id="hiCapLa" data-k="capLa" placeholder="${f0(ctx.eduBase[id].la)}" value="${HI.capLa}"><small>tühi = praegune laste arv</small></div>
-    <div class="f"><label for="hiCapSc">Koolikohti</label><input type="number" id="hiCapSc" data-k="capSc" placeholder="${f0(ctx.eduBase[id].pk + ctx.eduBase[id].g)}" value="${HI.capSc}"><small>tühi = praegune õpilaste arv</small></div>
+    <div class="f"><label for="hiCapLa">Lasteaiakohti</label><input type="number" id="hiCapLa" data-k="capLa" placeholder="${f0(E.capOf(ctx, id).la)}" value="${HI.capLa}"><small>tühi = ${E.capOf(ctx, id).src.startsWith("praegune") ? "praegune laste arv" : "valla kohtade arv (ajutine)"}</small></div>
+    <div class="f"><label for="hiCapSc">Koolikohti</label><input type="number" id="hiCapSc" data-k="capSc" placeholder="${f0(E.capOf(ctx, id).sc)}" value="${HI.capSc}"><small>tühi = ${E.capOf(ctx, id).src.startsWith("praegune") ? "praegune õpilaste arv" : "valla kohtade arv (ajutine)"}</small></div>
   </form></div>
   <div id="hiOut2"></div>`;
   $("#hiForm").addEventListener("input", e => { const k = e.target.dataset.k; if (!k) return; HI[k] = e.target.value; if (k === "unit" || k === "type") rElamu(); else hiResult(); });
@@ -330,13 +330,14 @@ function rElamu() {
 }
 function hiResult() {
   const inp = hiInputs(), H = E.housingImpact(ctx, inp.unit, inp, params()), L = H.last, pl = H.peakLa, ps = H.peakSc;
-  const net = L.dTaxR - L.dCost;
+  const net = L.dNet, netM = L.dNetMarg;
   $("#hiOut2").innerHTML = `
   <div class="kpis">
     <div class="kpi dev"><span class="lab">Uusi elanikke</span><b>${f0(H.newcomers)}</b><small>2036: rahvaarv ${sg(L.dPop)} võrreldes ilma arenduseta</small></div>
     <div class="kpi dev"><span class="lab">Lasteaialapsi juurde</span><b>${sg(pl.dLa)}</b><small>tipp ${pl.y} · ${H.cap.firstLa ? "kohti puudu alates " + H.cap.firstLa : "mahub kohtadesse"}</small></div>
     <div class="kpi dev"><span class="lab">Õpilasi juurde</span><b>${sg(ps.dSc)}</b><small>tipp ${ps.y} · ${H.cap.firstSc ? "kohti puudu alates " + H.cap.firstSc : "mahub kohtadesse"}</small></div>
-    <div class="kpi"><span class="lab">Eelarve mõju 2036</span><b class="${net >= 0 ? "pos" : "neg"}">${sg(net / 1000)} tuh €/a</b><small>tulumaks ${sg(L.dTaxR / 1000)} · kulud ${sg(-L.dCost / 1000)} tuh €</small></div>
+    <div class="kpi"><span class="lab">Eelarve mõju 2036, täiskulu</span><b class="${net >= 0 ? "pos" : "neg"}">${sg(net / 1000)} tuh €/a</b><small>tulumaks ${sg(L.dTaxR / 1000)} · tasandusfond ${sg(-L.dTf / 1000)} · kulud ${sg(-L.dCost / 1000)} tuh €</small></div>
+    ${netM != null ? `<div class="kpi"><span class="lab">Eelarve mõju 2036, piirkulu</span><b class="${netM >= 0 ? "pos" : "neg"}">${sg(netM / 1000)} tuh €/a</b><small>valla lisakulu ${sg(-L.dCostMarg / 1000)} tuh € (mõjukanga ühikukulud)</small></div>` : ""}
     <div class="kpi"><span class="lab">Lisainvesteering</span><b>${eur(H.cap.investLa + H.cap.investSc)}</b><small>ainult arendusest tulenev puudujääk</small></div>
     <div class="kpi"><span class="lab">Tööl Tallinnas</span><b>${sg(L.dTln)}</b><small>pendelrände osakaal ${Math.round(H.tlnShare * 100)}% (REL 2021)</small></div>
   </div>
@@ -345,10 +346,10 @@ function hiResult() {
     <div class="box"><div class="boxh"><h3>Lisanduv nõudlus aastate kaupa</h3></div><div class="chart" id="hiChart"></div>${legend([{ name:"lasteaialapsed", color:css("--dev") }, { name:"õpilased", color:css("--accent") }])}</div>
     <div class="box"><div class="boxh"><h3>Kohtade bilanss</h3><span class="small muted">nõudlus koos arendusega</span></div><div class="chart" id="hiCap"></div>${legend([{ name:"lasteaed koos arendusega", color:css("--dev") }, { name:"lasteaed ilma", color:css("--dev"), dash:true }, { name:"kool koos arendusega", color:css("--accent") }, { name:"kool ilma", color:css("--accent"), dash:true }])}</div>
   </div>
-  <div class="tw"><table><thead><tr><th>Aasta</th><th class="n">Lisandub</th><th class="n">Rahvaarv</th><th class="n">Lasteaed</th><th class="n">Kool</th><th class="n">Tulumaks, tuh €</th><th class="n">Kulud, tuh €</th><th class="n">Tööl Tallinnas</th></tr></thead><tbody>
-  ${H.rows.filter(r => r.y > 2026).map(r => `<tr><td>${r.y}</td><td class="n">${r.added ? f0(r.added) : "–"}</td><td class="n">${sg(r.dPop)}</td><td class="n">${sg(r.dLa)}</td><td class="n">${sg(r.dSc)}</td><td class="n">${sg(r.dTaxR / 1000)}</td><td class="n">${sg(r.dCost / 1000)}</td><td class="n">${sg(r.dTln)}</td></tr>`).join("")}
+  <div class="tw"><table><thead><tr><th>Aasta</th><th class="n">Lisandub</th><th class="n">Rahvaarv</th><th class="n">Lasteaed</th><th class="n">Kool</th><th class="n">Tulumaks, tuh €</th><th class="n">Tasandusfond, tuh €</th><th class="n">Täiskulu, tuh €</th><th class="n">Piirkulu, tuh €</th><th class="n">Neto, tuh €</th><th class="n">Tööl Tallinnas</th></tr></thead><tbody>
+  ${H.rows.filter(r => r.y > 2026).map(r => `<tr><td>${r.y}</td><td class="n">${r.added ? f0(r.added) : "–"}</td><td class="n">${sg(r.dPop)}</td><td class="n">${sg(r.dLa)}</td><td class="n">${sg(r.dSc)}</td><td class="n">${sg(r.dTaxR / 1000)}</td><td class="n">${sg(-r.dTf / 1000)}</td><td class="n">${sg(-r.dCost / 1000)}</td><td class="n">${r.dCostMarg != null ? sg(-r.dCostMarg / 1000) : "–"}</td><td class="n">${sg(r.dNet / 1000)}</td><td class="n">${sg(r.dTln)}</td></tr>`).join("")}
   </tbody></table></div>
-  <p class="note">Tulumaks ja kulud on 2026. aasta hindades. Uute elanike vanusejaotus on mudeli pere sisserände profiil (lapsed ja 25–44-aastased). Haridusandmed: ${esc(H.eduSrc)}. Ühikukulud: ${esc(H.ucSrc)}. Tulumaks: ${esc(H.taxSrc)}. Investeeringu ühikuhinnad (${eur(H.cap.priceLa)} lasteaiakoht, ${eur(H.cap.priceSc)} koolikoht) on hinnangud.</p>`;
+  <p class="note">Tulumaks ja kulud on 2026. aasta hindades. Uute elanike vanusejaotus on mudeli pere sisserände profiil, mille laste osa on elamutüübi järgi korrutatud ${H.childScale.toFixed(2).replace(".", ",")}-ga (mõjukanga laste kordaja). Tasandusfondist kaob ${Math.round(H.tf.share * 100)}% lisanduvast tulumaksust${H.tf.cap != null ? ", kõige rohkem " + eur(H.tf.cap) + " aastas" : ""}. Neto = tulumaks − tasandusfondi kadu − täiskulu (RR302); piirkulu on valla tegelik lisakulu üksiku arenduse puhul. Haridusandmed: ${esc(H.eduSrc)}. Ühikukulud: ${esc(H.ucSrc)}. Tulumaks: ${esc(H.taxSrc)}. Investeeringu ühikuhinnad (${eur(H.cap.priceLa)} lasteaiakoht, ${eur(H.cap.priceSc)} koolikoht) on hinnangud.</p>`;
   const a = [], b = []; H.rows.forEach(r => { a.push([r.y, r.dLa]); b.push([r.y, r.dSc]); });
   lineChart($("#hiChart"), { series: [{ pts: b, color: css("--accent"), end: true }, { pts: a, color: css("--dev"), end: true }], y0: 0, label: "Lisanduv nõudlus" });
   const s1 = H.rows.map(r => [r.y, r.scenLa]), s0 = H.rows.map(r => [r.y, r.baseLa]), k1 = H.rows.map(r => [r.y, r.scenSc]), k0 = H.rows.map(r => [r.y, r.baseSc]);
@@ -365,7 +366,7 @@ function rInvest() {
   });
   const yr = r => r ? r : "–";
   $("#invest-body").innerHTML = `
-  <p class="lead">Kohtade puudujääk tekib siis, kui nõudlus ületab kohtade arvu. Sisesta iga omavalitsuse tegelik kohtade arv; tühja välja korral on kohtade arvuks praegune laste ja õpilaste arv (eeldus: kohad on täis). Investeering on suurim puudujääk korrutatud koha hinnaga ja eeldab laenuga katmist.</p>
+  <p class="lead">Kohtade puudujääk tekib siis, kui nõudlus ületab kohtade arvu. Sisesta iga omavalitsuse tegelik kohtade arv; tühja välja korral on kohtade arvuks andmetes olev kohtade arv (Kohila: 470 lasteaia- ja 1 010 koolikohta, ajutine kuni valla andmeteni) või selle puudumisel praegune laste ja õpilaste arv (eeldus: kohad on täis). Investeering on suurim puudujääk korrutatud koha hinnaga ja eeldab laenuga katmist.</p>
   <div class="box flat"><form class="form" id="prForm" onsubmit="return false">
     <div class="f"><label for="prLa">Lasteaiakoha hind, €</label><input type="number" id="prLa" step="1000" value="${PR.la}"><small>hinnang</small></div>
     <div class="f"><label for="prSc">Koolikoha hind, €</label><input type="number" id="prSc" step="1000" value="${PR.sc}"><small>hinnang</small></div>

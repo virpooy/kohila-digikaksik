@@ -11,3 +11,4 @@
 | 2026-10-30 | Kohila arengukangas on artefakt „Kohila arengumudel 2036”; mõjuarvestuse tööversioon on „Planeeringute mõjukangas”. | Peeter Pallav |
 | 2026-10-30 | Kohila arengumudelit ei parandata. Selle 51 vastuolu on dokumenteeritud; kaksik ehitab õige loogika ise ja võtab arengumudelist ainult asulate ja asutuste andmed. Arengumudel jääb vanaks versiooniks, kuni kaksik selle asendab. | Claude, Peetri volitusel |
 | 2026-10-30 | Eelmudelite erinevuste soovitused E1–E10 (`docs/vordlus.md`) kehtivad vaikimisi, kuni Peeter mõne muudab. | Claude, Peetri volitusel |
+| 2026-10-30 | Etapp 2 tehtud: mootor 2.0.0 kordab põhimudeli v6 rahvastikuprognoosi täpselt ja sisaldab otsuseid E2–E8 ja E10. E9 jääb etappi 3. | Claude, Peetri ülesandel |
