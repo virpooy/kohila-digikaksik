@@ -13,14 +13,17 @@
  *  - Iga funktsiooni sisendid ja väljundid on kirjeldatud massiivis API,
  *    mida kasutajaliides näitab dokumentatsioonina.
  *  - selfTest() kontrollib, et mootor annab Rapla maakonna valdadele samad
- *    tulemused mis põhimudel (reference.json).
+ *    tulemused mis põhimudel (reference.json, koostatud tools/rak_reference.js abil
+ *    otse põhimudeli lähtekoodist).
+ *  - 2.0.0: üheaastaste vanuste kohortmootor (põhimudel v6), kalibreerimine 2023–2025,
+ *    rändemustrid registriparandusega (otsus E1).
  *
  * Töötab brauseris (window.TwinEngine) ja Node'is (module.exports).
  */
 (function (root) {
   "use strict";
 
-  const VERSION = "1.0.0 (09.10.2026)";
+  const VERSION = "2.0.0 (30.10.2026)";
   const G = 18;
   const AGEL = ["0–4","5–9","10–14","15–19","20–24","25–29","30–34","35–39","40–44","45–49","50–54","55–59","60–64","65–69","70–74","75–79","80–84","85+"];
   /* Vanuserühmade suremus (promill), Eesti üldprofiil; tase kalibreeritakse iga omavalitsuse tegelike surmade järgi */
@@ -40,22 +43,60 @@
   function kCal(pop, a, b) { let D = 0, E = 0; for (let y = a; y <= b; y++) { D += pop.d[YI(y)]; E += ageOf(pop, y).reduce((s, x, g) => s + x * MORT[g], 0); } return D / E; }
   function fertCal(pop, a, b) { let B = 0, W = 0; for (let y = a; y <= b; y++) { B += pop.b[YI(y)]; const p = ageOf(pop, y); W += p[4] + p[5] + p[6] + p[7]; } return B / W; }
   function balance(pop, a, b) { let B = 0, D = 0; for (let y = a; y < b; y++) { B += pop.b[YI(y)]; D += pop.d[YI(y)]; } return (pop.tot[String(b)] - pop.tot[String(a)] - B + D) / (b - a); }
-  function resid(pop, k, a, b) {
-    const P0 = ageOf(pop, a), P1 = ageOf(pop, b), R = new Array(G).fill(0); let B = 0;
-    for (let y = a; y < b; y++) B += pop.b[YI(y)];
-    R[0] = (P1[0] - B * 0.996) / 5;
-    for (let g = 1; g < G; g++) { let s = P0[g - 1] * Math.pow(1 - MORT[g - 1] * k, 5); if (g === G - 1) s += P0[G - 1] * Math.pow(1 - MORT[G - 1] * k, 5); R[g] = (P1[g] - s) / 5; }
-    const T = balance(pop, a, b), S = sum(R); return R.map((x, g) => x + (T - S) * GEN[g]);
+  function regBal(pop, a, b) { let s = 0; for (let y = a; y < b; y++) s += pop.mi[YI(y)] - pop.mo[YI(y)]; return s / (b - a); }
+
+  /* ---------------- Üheaastaste vanuste mootor (põhimudel v6) ----------------
+   * Vanused 0..84 ja 85+. Viieaastased rühmad jaotatakse algaastal ühtlaselt (0–4 sünnipõlvkondade järgi)
+   * ja kohort liigub igal aastal täpselt ühe aasta võrra. Väljund agregeeritakse tagasi 18 rühmaks. */
+  const A1 = 86, GOF = a => a >= 85 ? 17 : Math.floor(a / 5);
+  function toSingle(pop, y, P) {
+    const S = new Array(A1).fill(0);
+    for (let g = 0; g < 17; g++) {
+      let w = [1, 1, 1, 1, 1];
+      if (g === 0) { const bb = [1, 2, 3, 4, 5].map(i => { const j = YI(y - i); return j >= 0 && j < pop.b.length ? pop.b[j] : null; }); if (bb.every(x => x != null)) w = bb; }
+      const ws = sum(w); for (let i = 0; i < 5; i++) S[g * 5 + i] = P[g] * w[i] / ws;
+    }
+    S[85] = P[17]; return S;
   }
-  /** Kalibreerib ühe omavalitsuse: suremustase k, sündimus f ja viis rändemustrit. */
+  function toGroups(S) { const P = new Array(G).fill(0); for (let a = 0; a < A1; a++) P[GOF(a)] += S[a]; return P; }
+  /** Üks aasta: ellujäämine, vananemine ühe aasta võrra, sünnid (20–39-aastaste järgi või tegelikud B), ränne R (18 rühma, jagatud rühma vanustele). */
+  function step1(S, k, f, R, B) {
+    const N = new Array(A1).fill(0);
+    for (let a = 0; a < A1; a++) { const s = S[a] * (1 - MORT[GOF(a)] * k); if (a < 84) N[a + 1] += s; else N[85] += s; }
+    let W = 0; for (let a = 20; a <= 39; a++) W += S[a]; N[0] += B != null ? B : f * W;
+    for (let a = 0; a < A1; a++) N[a] = Math.max(0, N[a] + (a >= 85 ? R[17] : R[GOF(a)] / 5));
+    return N;
+  }
+  /** projectFrom: lähteaasta vanusjaotusest; f ja k võivad olla arvud või funktsioonid aastast; BS(y) annab tegelikud sünnid. */
+  function projectFrom(pop, start, end, R, f, kf, BS, addFn) {
+    let S = toSingle(pop, start, ageOf(pop, start)); const out = { [start]: ageOf(pop, start).slice() };
+    for (let y = start; y < end; y++) {
+      const Ry = addFn ? addFn(y, R) : R;
+      S = step1(S, typeof kf === "function" ? kf(y) : kf, typeof f === "function" ? f(y) : f, Ry, BS ? BS(y) : null); out[y + 1] = toGroups(S);
+    }
+    return out;
+  }
+  /** Bilansiline kohordijääk aastas: rühmade ränne, mis sama mootoriga (tegelikud sünnid, perioodi suremus) kordab lõppaasta vanusjaotust. */
+  function resid(pop, a, b, k) {
+    const P1 = ageOf(pop, b), bs = y => pop.b[YI(y)]; let R = new Array(G).fill(0);
+    for (let it = 0; it < 80; it++) {
+      const p = projectFrom(pop, a, b, R, 0, k, bs)[b]; let mx = 0;
+      R = R.map((x, g) => { const d = (P1[g] - p[g]) / 3; mx = Math.max(mx, Math.abs(d)); return x + d; });
+      if (mx < 0.005) break;
+    }
+    return R;
+  }
+  /** Kalibreerib ühe omavalitsuse (põhimudel v6): suremustase k (2023–2025), sündimus f ja viis rändemustrit. */
   function calibrate(pop, migV) {
-    const C = { k: kCal(pop, 2021, 2025) };
+    const C = { k: kCal(pop, 2023, 2025), k1620: kCal(pop, 2016, 2020), k2125: kCal(pop, 2021, 2025) };
     C.f = fertCal(pop, 2023, 2025); C.fOld = fertCal(pop, 2016, 2020); C.fMid = fertCal(pop, 2021, 2025);
-    C.r1 = resid(pop, C.k, 2016, 2021); C.r2 = resid(pop, C.k, 2021, 2026);
+    C.r1full = resid(pop, 2016, 2021, C.k1620); C.r2full = resid(pop, 2021, 2026, C.k2125);
+    C.korr1 = balance(pop, 2016, 2021) - regBal(pop, 2016, 2021); C.korr2 = balance(pop, 2021, 2026) - regBal(pop, 2021, 2026);
+    C.r1 = C.r1full.map((x, g) => x - C.korr1 * GEN[g]); C.r2 = C.r2full.map((x, g) => x - C.korr2 * GEN[g]);
     C.mean = C.r1.map((x, g) => (x + C.r2[g]) / 2);
     const M = migV, mb = (M[2019] + M[2021] + M[2024]) / 3, exc = M[2022] + M[2023] - 2 * mb; C.uaExc = exc;
     C.r2x = C.r2.map((x, g) => x - exc / 5 * GEN[g]);
-    const L3 = balance(pop, 2024, 2026), s2x = sum(C.r2x); C.bal3 = L3; C.r3 = C.r2x.map((x, g) => x + (L3 - s2x) * GEN[g]);
+    const L3 = regBal(pop, 2024, 2026), s2x = sum(C.r2x); C.bal3 = L3; C.r3 = C.r2x.map((x, g) => x + (L3 - s2x) * GEN[g]);
     return C;
   }
   function e0(k) { let l = 1, e = 0; for (let g = 0; g < G; g++) { const m = MORT[g] * k; if (g === G - 1) { e += l / m; break; } const s = Math.pow(1 - m, 5); e += l * (1 - s) / m; l *= s; } return e; }
@@ -64,7 +105,7 @@
   function regionParams(pops, e0Series) {
     const P = []; for (let y = 2021; y <= 2025; y++) { let B = 0, W = 0; pops.forEach(p => { B += p.b[YI(y)]; const a = ageOf(p, y); W += a[4] + a[5] + a[6] + a[7]; }); P.push([y, Math.log(B / W)]); }
     const fslope = slope(P);
-    let D = 0, E = 0; pops.forEach(p => { for (let y = 2021; y <= 2025; y++) { D += p.d[YI(y)]; E += ageOf(p, y).reduce((s, x, g) => s + x * MORT[g], 0); } });
+    let D = 0, E = 0; pops.forEach(p => { for (let y = 2023; y <= 2025; y++) { D += p.d[YI(y)]; E += ageOf(p, y).reduce((s, x, g) => s + x * MORT[g], 0); } });
     const kc = D / E, e0m = e0(kc), e0sl = slope(Object.entries(e0Series).map(([y, v]) => [+y, v]));
     const tgt = e0m + e0sl * 10; let lo = 0.3, hi = 1; for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; if (e0(kc * m) > tgt) lo = m; else hi = m; }
     return { fslope, kc, e0m, e0sl, lam: 1 - Math.pow((lo + hi) / 2, 1 / 10) };
@@ -98,13 +139,6 @@
     return 1;
   }
   function mortMul(ctx, region, y, p) { return p.mort === "tr" ? Math.pow(1 - ctx.regions[region].lam, y - 2024) : 1; }
-  function step(P, k, f, R) {
-    const s = P.map((x, g) => x * (1 - MORT[g] * k)), N = new Array(G).fill(0);
-    for (let g = 0; g < G; g++) { if (g < G - 1) { N[g] += s[g] * 0.8; N[g + 1] += s[g] * 0.2; } else N[g] += s[g]; }
-    N[0] += f * (P[4] + P[5] + P[6] + P[7]);
-    for (let g = 0; g < G; g++) N[g] = Math.max(0, N[g] + R[g]);
-    return N;
-  }
   const DEF = { mig: "mean", extra: 0, fert: 0, fertTr: "const", mort: "const", vx: 0, add: null, start: 2026, end: 2036 };
   /**
    * project(ctx, unitId, params) → { [aasta]: vanusevektor(18) }
@@ -115,13 +149,9 @@
     const p = { ...DEF, ...params }, u = ctx.units[id], reg = ctx.regions[u.region], C = u.cal, pop = ctx.data.pop[id];
     const tot = sum(reg.members.map(m => ctx.data.pop[m].tot[String(p.start)])), share = pop.tot[String(p.start)] / tot;
     const base = (p.R || C[p.mig]).map((x, g) => x + (p.extra * share + p.vx) * GEN[g]);
-    let P = ageOf(pop, p.start).slice(); const out = { [p.start]: P };
-    for (let y = p.start; y < p.end; y++) {
-      const k = C.k * mortMul(ctx, u.region, y, p), f = C.f * (1 + p.fert / 100) * fertMul(ctx, u.region, y, p);
-      const a = p.add && p.add[y + 1] ? p.add[y + 1] : 0;
-      P = step(P, k, f, a ? base.map((x, g) => x + a * GEN[g]) : base); out[y + 1] = P;
-    }
-    return out;
+    const kf = y => C.k * mortMul(ctx, u.region, y, p), ff = y => C.f * (1 + p.fert / 100) * fertMul(ctx, u.region, y, p);
+    const addFn = p.add ? (y, R) => { const a = p.add[y + 1] || 0; return a ? R.map((x, g) => x + a * GEN[g]) : R; } : null;
+    return projectFrom(pop, p.start, p.end, base, ff, kf, null, addFn);
   }
   /** Agregaadi (nt maakond) projektsioon liikmete summana. */
   function projectAgg(ctx, aggId, params) {
@@ -282,9 +312,9 @@
    * Lisaks mehaanika kontroll: tegeliku 2021–2026 rändega peab mudel kordama 2026. aastat.
    */
   function backtest(ctx, id) {
-    const pop = ctx.data.pop[id], k = kCal(pop, 2016, 2020), f = fertCal(pop, 2016, 2020), R = resid(pop, k, 2016, 2021);
-    let P = ageOf(pop, 2021).slice(); for (let y = 2021; y < 2026; y++) P = step(P, k, f, R);
-    const C = ctx.units[id].cal; let Q = ageOf(pop, 2021).slice(); for (let y = 2021; y < 2026; y++) Q = step(Q, C.k, C.fMid, C.r2);
+    const pop = ctx.data.pop[id], C = ctx.units[id].cal;
+    const P = projectFrom(pop, 2021, 2026, C.r1, C.fOld, C.k1620)[2026];          // valimiväline: ainult 2016–2021 teadmised
+    const Q = projectFrom(pop, 2021, 2026, C.r2full, C.fMid, C.k2125)[2026];      // valimisisene: tegelik 2021–2026 ränne
     const act = ageOf(pop, 2026);
     const bands = BANDS.map(([l, i, j]) => { const a = sumG(act, i, j), e = sumG(P, i, j); return { l, act: a, est: e, err: e / a - 1 }; });
     return { act: total(act), oos: total(P), ins: total(Q), errOos: total(P) / total(act) - 1, errIns: total(Q) / total(act) - 1, bands,
@@ -414,7 +444,7 @@
     { fn: "selfTest(ctx, ref)", in: "reference.json", out: "[{ id, name, ok, detail }]", desc: "Võrdlus põhimudeliga ja sisemise kooskõla kontroll." }
   ];
 
-  const TwinEngine = { VERSION, G, AGEL, MORT, GEN, HH, BANDS, laP, pkP, gP, sum, sumG, calibrate, regionParams, build, project, projectAgg, total,
+  const TwinEngine = { VERSION, G, AGEL, MORT, GEN, HH, BANDS, laP, pkP, gP, sum, sumG, calibrate, regionParams, toSingle, toGroups, projectFrom, build, project, projectAgg, total,
     eduBase, eduDemand, unitCosts, taxSeries, wageIdx, agesFn, housingImpact, investNeed, debtEffect, needExtra, settlementLayer, schoolAccess, settlementInfo,
     backtest, decision, selfTest, API, fmt, eurT };
   if (typeof module !== "undefined" && module.exports) module.exports = TwinEngine; else root.TwinEngine = TwinEngine;
