@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="et">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kohila digikaksik</title>
+<meta name="description" content="Kohila ja Rae valla digitaalne kaksik: rahvastik, teenused, arengukava eesmärgid, planeeringute ja otsuste mõju.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<script>try{var t=localStorage.getItem("kaksik3:theme");if(!t)t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="light";}</script>
+<style>/*__CSS__*/</style>
+<body>
+<a class="skip" href="#main">Liigu sisu juurde</a>
+<header class="k9top">
+  <div class="k9wrap row1">
+    <div class="brand"><b>Kohila digikaksik</b><span id="brandSub">Laadin andmeid…</span></div>
+    <nav class="k9nav" id="nav" aria-label="Peatükid"></nav>
+    <div class="tools"><div class="seg" id="unitSeg" role="group" aria-label="Omavalitsus"></div><button class="iconbtn" id="themeBtn" type="button" aria-label="Vaheta heledat ja tumedat teemat">◐</button></div>
+  </div>
+  <div class="k9wrap row2" id="scenBar" hidden>
+    <span class="kick">Stsenaarium</span>
+    <label for="migSel">Rändemuster <select id="migSel"></select></label>
+    <label for="extraIn">Lisaränne <input type="number" id="extraIn" value="0" step="10"> in/a</label>
+    <label for="fertIn">Sündimus <input type="range" id="fertIn" min="-20" max="20" step="5" value="0"> <output id="fertOut">±0%</output></label>
+    <span id="scenNote" class="dim"></span>
+  </div>
+</header>
+<main id="main" class="k9wrap"><div class="loading">Laadin andmefaile ja kalibreerin mudelit…</div></main>
+<div class="tip" id="tip" role="tooltip"></div>
+<script>/*__ENGINE__*/</script>
+<script>/*__APP__*/</script>
+</body>
+</html>

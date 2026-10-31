@@ -1,0 +1,26 @@
+/* Kuldväljundid mootorist 2.2.0 (tests/engine_v2_2_0.js) — uue mootori pariteeditest võrdleb nendega. */
+const fs = require("fs"), path = require("path"), E = require("./engine_v2_2_0.js");
+const D = n => JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", n + ".json")));
+const ctx = E.build({ kov: D("kov"), pop: D("pop"), fin: D("fin"), edu: D("edu"), ext: D("ext"), settlements: D("settlements") });
+const U = Object.keys(ctx.units), M = ["r1", "mean", "r2", "r2x", "r3"], out = {};
+const strip = o => JSON.parse(JSON.stringify(o, (k, v) => typeof v === "function" ? undefined : v));
+out.cal = {}; U.forEach(id => out.cal[id] = ctx.units[id].cal);
+out.regions = ctx.regions; out.taxCtx = ctx.tax; out.eduBase = ctx.eduBase; out.uc = ctx.uc;
+out.project = {}; U.forEach(id => M.forEach(m => [{ mig: m }, { mig: m, extra: 40, fert: 10 }, { mig: m, fertTr: "down", mort: "tr", vx: 25 }].forEach((p, i) => out.project[id + "|" + m + "|" + i] = E.project(ctx, id, p))));
+out.projectAgg = {}; M.forEach(m => out.projectAgg[m] = E.projectAgg(ctx, "MAAK", { mig: m, extra: 20 }));
+out.tax = {}; U.forEach(id => out.tax[id] = E.taxSeries(ctx, id, E.agesFn(ctx, id, E.project(ctx, id, {})), {}));
+out.edu = {}; U.forEach(id => { const P = E.project(ctx, id, {}); out.edu[id] = [2026, 2030, 2036].map(y => E.eduDemand(ctx, id, P[y])); });
+out.housing = {}; U.forEach(id => ["korter", "ridaelamu", "eramu"].forEach(t => out.housing[id + "|" + t] = strip(E.housingImpact(ctx, id, { n: 120, type: t, start: 2028, years: 2, settlement: null }, { mig: "r2" }))));
+out.housing2 = strip(E.housingImpact(ctx, "Kohila", { n: 80, type: "korter", start: 2029, years: 3, hh: 2.4, occ: 0.9, outside: 0.6, settlement: "Urge küla", capLa: 450, capSc: 950 }, {}));
+out.devs = strip(E.devsImpact(ctx, "Kohila", [{ n: 40, type: "eramu", start: 2028, years: 2 }, { n: 60, type: "korter", start: 2029, years: 3 }], {}));
+out.scen = strip(E.scenarioRun(ctx, "Kohila", { params: { mig: "r2", extra: 30 }, devs: [{ n: 100, type: "korter", start: 2028, years: 2 }], capLa: 500, capSc: 1100, capFrom: 2029 }));
+out.goals = {}; U.concat(["MAAK"]).forEach(id => out.goals[id] = strip(E.goalsEval(ctx, id, {})));
+out.invest = {}; U.forEach(id => out.invest[id] = strip(E.investNeed(ctx, id, E.project(ctx, id, {}), {})));
+out.debt = {}; U.forEach(id => { out.debt[id] = strip(E.debtPath(ctx, id, 1e6)); out.debt[id + "|eff"] = strip(E.debtEffect(ctx, id, 2e6)); });
+out.need = {}; ["Kohila", "Rapla", "Kehtna"].forEach(id => out.need[id] = E.needExtra(ctx, id, ctx.units[id].target.pop, 2035, {}));
+out.settle = {}; U.forEach(id => { const P = E.project(ctx, id, {}); out.settle[id] = strip(E.settlementLayer(ctx, id, P, 2036)); out.settle[id + "|acc"] = strip(E.schoolAccess(ctx, id, P, 2036)); });
+out.backtest = {}; U.forEach(id => out.backtest[id] = strip(E.backtest(ctx, id)));
+out.decision = { elamu: strip(E.decision(ctx, "elamu", { unit: "Kohila", n: 120, type: "korter", start: 2028, years: 2 }, {})), kohad: strip(E.decision(ctx, "kohad", { unit: "Kohila", kind: "la", delta: 40, year: 2028 }, {})), siht: strip(E.decision(ctx, "siht", { unit: "Kohila", target: 10000, year: 2035 }, {})) };
+out.selfTest = E.selfTest(ctx, D("reference")).map(t => [t.id, t.ok]);
+fs.writeFileSync(path.join(__dirname, "golden_v2.json"), JSON.stringify(out));
+console.log("golden", Object.keys(out).length, "rühma,", (fs.statSync(path.join(__dirname, "golden_v2.json")).size / 1024).toFixed(0), "kB");
