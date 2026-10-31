@@ -1,0 +1,28 @@
+name: Kaardi aluskiht
+# Käsitsi: laeb OpenStreetMapist kaardikihid (tools/osm_kaart.js) ja salvestab data/map.json.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+jobs:
+  map:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Lae kaardikihid
+        run: |
+          node tools/osm_kaart.js | tee kaart.txt
+          echo "::notice title=Kaart::$(tr '\n' ' ' < kaart.txt)"
+      - name: Salvesta
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          if git diff --quiet data/ && git ls-files --error-unmatch data/map.json >/dev/null 2>&1; then echo "Muudatusi ei ole"; exit 0; fi
+          git config user.name "kaardi-uuendus"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/map.json
+          git commit -m "Kaardi aluskiht $(date +%Y-%m-%d)" -m "$(cat kaart.txt)"
+          git push
+          gh workflow run ci.yml --ref main
