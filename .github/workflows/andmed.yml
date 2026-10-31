@@ -15,7 +15,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - name: Uuenda andmed
-        run: node tools/update_open_data.js | tee uuendus.txt
+        run: |
+          node tools/update_open_data.js | tee uuendus.txt
+          echo "::notice title=Andmete uuendus::$(tr '\n' ' ' < uuendus.txt)"
+          if grep -qiE "viga|ei leitud" uuendus.txt; then echo "::error title=Andmete uuendus::allika lugemine ebaõnnestus"; exit 1; fi
       - name: Enesetestid
         run: node engine.test.js
       - name: Salvesta ja avalda

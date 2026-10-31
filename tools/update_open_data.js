@@ -52,6 +52,6 @@ if (require.main === module) (async () => {
   try { a = await mta(fin); } catch (e) { log.push("MTA viga: " + e.message); }
   try { b = await rr302(ext); } catch (e) { log.push("RR302 viga: " + e.message); }
   if (!dry) { if (a) fs.writeFileSync(path.join(DIR, "fin.json"), JSON.stringify(fin)); if (b) fs.writeFileSync(path.join(DIR, "ext.json"), JSON.stringify(ext)); }
-  console.log(log.join("\n") || "Muudatusi ei ole");
+  console.log(log.join("\n") || "Muudatusi ei ole: MTA ja RR302 on ajakohased");
 })();
 module.exports = { parseMta };
