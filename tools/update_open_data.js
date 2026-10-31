@@ -20,7 +20,7 @@ function parseMta(csv, names) {
 }
 async function mta(fin) {
   const page = await fetch("https://www.emta.ee/eraklient/amet-uudised-ja-kontakt/uudised-pressiinfo-statistika/statistika-ja-avaandmed").then(r => r.text());
-  const year = new Date().getFullYear(), re = new RegExp(`href="([^"]+)"[^>]*>[^<]*tulumaksu koondandmed ${year}[^<]*\\|\\s*csv`, "i"), m = page.match(re);
+  const year = new Date().getFullYear(), m = page.match(new RegExp(`href="([^"]*ncfailid\\.emta\\.ee/[^"]*tulumaks_${year}\\.csv[^"]*)"`, "i"));
   if (!m) { log.push("MTA: " + year + ". aasta csv linki ei leitud"); return false; }
   const csv = await fetch(m[1].replace(/&amp;/g, "&")).then(r => r.text());
   const P = parseMta(csv, units.map(u => u.name)); let ch = 0;
