@@ -103,9 +103,9 @@
     "end": 2036,
     "migPatterns": {
       "r1": "2016–2021",
-      "mean": "keskmine",
+      "mean": "ajalooline keskmine",
       "r2": "2021–2026",
-      "r2x": "2021–26 ilma põgeniketa",
+      "r2x": "2021–26 välisrände erandita",
       "r3": "2024–2026"
     },
     "defaultMig": "mean",

@@ -13,3 +13,4 @@
 | 2026-10-30 | Eelmudelite erinevuste soovitused E1–E10 (`docs/vordlus.md`) kehtivad vaikimisi, kuni Peeter mõne muudab. | Claude, Peetri volitusel |
 | 2026-10-30 | Etapp 2 tehtud: mootor 2.0.0 kordab põhimudeli v6 rahvastikuprognoosi täpselt ja sisaldab otsuseid E2–E8 ja E10. E9 jääb etappi 3. | Claude, Peetri ülesandel |
 | 2026-10-30 | E9 tehtud: planeeringukontrolli (versioon 33) lisati „Mõju eelhinnangu andmed”: eluruumid tüübi järgi, asula EHAK-koodiga (Statistikaamet RL21003, kõik 25 kontrollitud), asustamise algus ja kestus; salvestub `dp` kirjesse väljale `meta.moju`. Olemasolevaid kontrolle ei muudetud. | Peeter Pallav (kinnitas), Claude |
+| 2026-10-31 | Mootor 2.1.0: artefakti versioon 1.1.0 (10.10.2026: tagasitesti T6b, otsuste mõjutekstid, kulude hinnatase, koolide õpilasarvud) ühendati repo versiooniga 2.0.0. Artefakt ja GitHub Pages on nüüd sama versioon. | Claude, Peetri ülesandel |

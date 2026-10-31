@@ -3,6 +3,8 @@
  * ---------------------------------------------------------------
  * Referentsimplementatsioon digitaalse kaksiku prognoosimoodulile.
  * Pärineb Raplamaa juhtimiskeskuse (põhimudel v6) arvutusloogikast,
+ * mootor vastab põhimudeli demograafilisele parandusele (10.10.2026:
+ * üheaastased kohordid, registriparandusteta ränne, suremus 2023–2025),
  * mis on siin eraldatud kasutajaliidesest ja tehtud omavalitsusest sõltumatuks.
  *
  * Põhimõtted
@@ -23,7 +25,7 @@
 (function (root) {
   "use strict";
 
-  const VERSION = "2.0.0 (30.10.2026)";
+  const VERSION = "2.1.0 (31.10.2026)";
   const G = 18;
   const AGEL = ["0–4","5–9","10–14","15–19","20–24","25–29","30–34","35–39","40–44","45–49","50–54","55–59","60–64","65–69","70–74","75–79","80–84","85+"];
   /* Vanuserühmade suremus (promill), Eesti üldprofiil; tase kalibreeritakse iga omavalitsuse tegelike surmade järgi */
@@ -43,6 +45,7 @@
   function kCal(pop, a, b) { let D = 0, E = 0; for (let y = a; y <= b; y++) { D += pop.d[YI(y)]; E += ageOf(pop, y).reduce((s, x, g) => s + x * MORT[g], 0); } return D / E; }
   function fertCal(pop, a, b) { let B = 0, W = 0; for (let y = a; y <= b; y++) { B += pop.b[YI(y)]; const p = ageOf(pop, y); W += p[4] + p[5] + p[6] + p[7]; } return B / W; }
   function balance(pop, a, b) { let B = 0, D = 0; for (let y = a; y < b; y++) { B += pop.b[YI(y)]; D += pop.d[YI(y)]; } return (pop.tot[String(b)] - pop.tot[String(a)] - B + D) / (b - a); }
+  /** Registreeritud rändesaldo aastas (sisse- miinus väljaränne). Erinevus bilansilisest saldost on registriparandus. */
   function regBal(pop, a, b) { let s = 0; for (let y = a; y < b; y++) s += pop.mi[YI(y)] - pop.mo[YI(y)]; return s / (b - a); }
 
   /* ---------------- Üheaastaste vanuste mootor (põhimudel v6) ----------------
@@ -355,8 +358,8 @@
    */
   function backtest(ctx, id) {
     const pop = ctx.data.pop[id], C = ctx.units[id].cal;
-    const P = projectFrom(pop, 2021, 2026, C.r1, C.fOld, C.k1620)[2026];          // valimiväline: ainult 2016–2021 teadmised
-    const Q = projectFrom(pop, 2021, 2026, C.r2full, C.fMid, C.k2125)[2026];      // valimisisene: tegelik 2021–2026 ränne
+    const P = projectFrom(pop, 2021, 2026, C.r1full, () => C.fOld, () => C.k1620)[2026];
+    const Q = projectFrom(pop, 2021, 2026, C.r2full, () => C.fMid, () => C.k2125)[2026];
     const act = ageOf(pop, 2026);
     const bands = BANDS.map(([l, i, j]) => { const a = sumG(act, i, j), e = sumG(P, i, j); return { l, act: a, est: e, err: e / a - 1 }; });
     return { act: total(act), oos: total(P), ins: total(Q), errOos: total(P) / total(act) - 1, errIns: total(Q) / total(act) - 1, bands,
@@ -378,12 +381,13 @@
     if (type === "elamu") {
       const H = housingImpact(ctx, id, inp, p), L = H.last, pk = H.peakLa, ps = H.peakSc;
       rows.push({ area: "Rahvastik", now: fmt(total(base[E])) + " (" + E + ", ilma otsuseta)", effect: sgn(L.dPop) + " elanikku aastaks " + E, note: fmt(H.newcomers) + " uut elanikku asustamise ajal (" + H.inp.hh.toString().replace(".", ",") + " in/leibkond, täituvus " + Math.round(H.inp.occ * 100) + "%, väljastpoolt " + Math.round(H.inp.outside * 100) + "%)" });
-      const capNote = (first, firstB) => !first ? "Nõudlus mahub olemasolevatesse kohtadesse" : firstB && firstB <= first ? "Kohti jääb puudu juba ilma otsuseta alates " + firstB + ". aastast" : "Otsuse tõttu jääb kohti puudu alates " + first + ". aastast";
-      rows.push({ area: "Lasteaiakohad", now: fmt(H.cap.la) + " kohta", effect: sgn(pk.dLa) + " last (tipp " + pk.y + ")", note: capNote(H.cap.firstLa, H.cap.firstLaBase) });
-      rows.push({ area: "Koolikohad", now: fmt(H.cap.sc) + " kohta", effect: sgn(ps.dSc) + " õpilast (tipp " + ps.y + ")", note: capNote(H.cap.firstSc, H.cap.firstScBase) });
+      const capCfg = H.cap.src && !H.cap.src.startsWith("praegune"), capDef = { la: inp.capLa == null && !capCfg, sc: inp.capSc == null && !capCfg }, capEq = k => capDef[k] ? ". Kohtade arv ei ole sisestatud: eeldatud on, et kohti on täpselt nii palju kui 2026. aastal lapsi või õpilasi" : "";
+      const capNote = (first, firstB, k) => (!first ? "Nõudlus mahub olemasolevatesse kohtadesse" : firstB && firstB <= first ? "Kohti jääb puudu juba ilma otsuseta alates " + firstB + ". aastast" : "Otsuse tõttu jääb kohti puudu alates " + first + ". aastast") + capEq(k);
+      rows.push({ area: "Lasteaiakohad", now: fmt(H.cap.la) + " kohta", effect: sgn(pk.dLa) + " last (tipp " + pk.y + ")", note: capNote(H.cap.firstLa, H.cap.firstLaBase, "la") });
+      rows.push({ area: "Koolikohad", now: fmt(H.cap.sc) + " kohta", effect: sgn(ps.dSc) + " õpilast (tipp " + ps.y + ")", note: capNote(H.cap.firstSc, H.cap.firstScBase, "sc") });
       rows.push({ area: "Investeeringud", now: "–", effect: eurT(H.cap.investLa + H.cap.investSc), note: "Ainult otsusest tulenev lisapuudujääk × " + eurT(H.cap.priceLa) + " lasteaiakoha ja " + eurT(H.cap.priceSc) + " koolikoha kohta (hinnang)" });
       rows.push({ area: "Tulumaks", now: "–", effect: sgn(L.dTaxR / 1000) + " tuh € aastas (" + E + ")", note: "2026. aasta hindades · " + H.taxSrc });
-      rows.push({ area: "Teenuste kulud", now: "–", effect: sgn(L.dCost / 1000) + " tuh € aastas (" + E + ")", note: "2025. aasta hindades · ühikukulud: " + H.ucSrc });
+      rows.push({ area: "Teenuste kulud", now: "–", effect: sgn(L.dCost / 1000) + " tuh € aastas (" + E + ")", note: "Teenusemahu arvestuslik maksumus: ühikukulu on RR302 2023–2025 nominaalne mediaan, hinnaindeksiga korrigeerimata (ligikaudu 2024. aasta hinnatase) · ühikukulud: " + H.ucSrc });
       rows.push({ area: "Liikuvus", now: "–", effect: sgn(L.dTln) + " tööl käijat Tallinnas", note: "REL 2021 pendelrände osakaal " + Math.round(H.tlnShare * 100) + "%" });
       if (H.settlement) rows.push({ area: "Koolitee", now: H.settlement.name, effect: H.settlement.hasSchool ? "Asulas on põhikool" : "Asulas põhikooli ei ole", note: H.settlement.hasSchool ? "Õpilased saavad käia kodukohas" : sgn(ps.dPk) + " põhikooliõpilast vajab transporti" });
       const net = L.dTaxR - L.dCost;
@@ -391,9 +395,10 @@
         "Mudeli hinnangul lisandub arendusega " + fmt(H.newcomers) + " elanikku ning " + E + ". aastal on valla rahvaarv " + sgn(L.dPop) + " inimese võrra suurem kui ilma arenduseta. " +
         "Lasteaiakohtade nõudlus kasvab tipus " + fmt(pk.dLa) + " lapse ja koolikohtade nõudlus " + fmt(ps.dSc) + " õpilase võrra. " +
         (H.cap.firstLa || H.cap.firstSc ? "Olemasolevatest kohtadest ei piisa" + (H.cap.firstLa ? " lasteaias alates " + H.cap.firstLa + ". aastast" : "") + (H.cap.firstLa && H.cap.firstSc ? " ja" : "") + (H.cap.firstSc ? " koolis alates " + H.cap.firstSc + ". aastast" : "") + ((H.cap.firstLaBase && H.cap.firstLa && H.cap.firstLaBase <= H.cap.firstLa) || (H.cap.firstScBase && H.cap.firstSc && H.cap.firstScBase <= H.cap.firstSc) ? " (puudujääk tekib osaliselt ka ilma arenduseta)" : "") + ". Otsusest tulenev lisainvesteeringu vajadus on hinnanguliselt " + eurT(H.cap.investLa + H.cap.investSc) + ". " : "Olemasolevad lasteaia- ja koolikohad katavad lisanduva nõudluse. ") +
-        "Füüsilise isiku tulumaksu laekumine suureneb " + E + ". aastaks umbes " + eurT(L.dTaxR) + " aastas ja teenuste kulud umbes " + eurT(L.dCost) + " aastas (2026. aasta hindades), mis teeb valla eelarvele aastas " + (net >= 0 ? "positiivse mõju " + eurT(net) : "negatiivse mõju " + eurT(-net)) + ". " +
+        (capDef.la || capDef.sc ? "Kohtade tegelikku arvu ei ole sisestatud; arvutus eeldab, et kohti on täpselt nii palju kui 2026. aastal lapsi ja õpilasi, seega näitab iga nõudluse kasv puudujääki. " : "") +
+        "Füüsilise isiku tulumaksu laekumine suureneb " + E + ". aastaks umbes " + eurT(L.dTaxR) + " aastas (2026. aasta palgatasemel). Lisanduva teenusemahu arvestuslik maksumus on umbes " + eurT(L.dCost) + " aastas; see põhineb 2023–2025 nominaalsel ühikukulul (ligikaudu 2024. aasta hinnatase) ega ole eelarveprognoos. Tulu ja kulu vahe on seega suurusjärk: " + (net >= 0 ? "umbes +" + eurT(net) : "umbes −" + eurT(-net)) + " aastas. " +
         (H.settlement && !H.settlement.hasSchool ? "Arenduse asukohas (" + H.settlement.name + ") põhikooli ei ole, seega lisandub koolitranspordi vajadus umbes " + fmt(ps.dPk) + " õpilasele. " : "") +
-        "Hinnang põhineb kohortmudelil ja valla keskmistel näitajatel; see ei asenda detailset mõjude analüüsi.";
+        "Uute elanike vanusjaotus on mudeli pere sisserände profiil ja eeldab, et nad jäävad paikseks. Hinnang põhineb kohortmudelil ja valla keskmistel näitajatel; see ei asenda detailset mõjude analüüsi.";
       return { type, rows, text, H };
     }
     if (type === "kohad") {
@@ -406,11 +411,11 @@
       rows.push({ area: lbl, now: fmt(cap0) + " kohta", effect: sgn(delta) + " kohta alates " + year, note: "Täituvus " + Math.round(before.util * 100) + "% → " + Math.round(after.util * 100) + "%" });
       rows.push({ area: "Nõudlus " + E, now: fmt(yrs[0].dem), effect: fmt(end.dem), note: "Täituvus " + E + ": " + Math.round(end.util * 100) + "%" + (end.util > 1 ? " (puudujääk " + fmt(end.dem - end.cap) + ")" : end.util < 0.85 ? " (vabu kohti " + fmt(end.cap - end.dem) + ")" : "") });
       rows.push({ area: "Investeering", now: "–", effect: delta > 0 ? eurT(delta * price) : "0 €", note: delta > 0 ? eurT(price) + " koha kohta (hinnang)" : "Kohtade vähendamine investeeringut ei vaja" });
-      rows.push({ area: "Tegevuskulu", now: "–", effect: sgn(delta * uc * varShare / 1000) + " tuh € aastas", note: "Ühikukulu " + fmt(uc) + " € × muutuvkulu osa " + Math.round(varShare * 100) + "% (hinnang)" });
+      rows.push({ area: "Tegevuskulu", now: "–", effect: sgn(delta * uc * varShare / 1000) + " tuh € aastas", note: "Ühikukulu " + fmt(uc) + " € (RR302 2023–2025 nominaalne mediaan, ligikaudu 2024. a hinnatase) × muutuvkulu osa " + Math.round(varShare * 100) + "% (hinnang)" });
       const text = u.name + " kavandab " + (delta >= 0 ? "suurendada " : "vähendada ") + (kind === "la" ? "lasteaiakohtade" : "koolikohtade") + " arvu " + fmt(Math.abs(delta)) + " koha võrra alates " + year + ". aastast. " +
         "Praegu on kohti " + fmt(cap0) + " ja nõudlus on mudeli järgi " + fmt(yrs[0].dem) + "; " + E + ". aastaks muutub nõudlus " + fmt(end.dem) + "-ni. Pärast muudatust on täituvus " + year + ". aastal " + Math.round(after.util * 100) + "% ja " + E + ". aastal " + Math.round(end.util * 100) + "%. " +
         (delta > 0 ? "Investeeringuvajadus on hinnanguliselt " + eurT(delta * price) + ". " : "") +
-        "Aastane tegevuskulu muutub umbes " + eurT(delta * uc * varShare) + ". Hinnang põhineb kohortmudelil ja valla keskmisel ühikukulul.";
+        "Aastane tegevuskulu muutub umbes " + eurT(delta * uc * varShare) + " (2023–2025 nominaalne ühikukulu, ligikaudu 2024. aasta hinnatase). Hinnang põhineb kohortmudelil ja valla keskmisel ühikukulul.";
       return { type, rows, text, yrs };
     }
     if (type === "siht") {
@@ -418,7 +423,7 @@
       const d0 = eduDemand(ctx, id, base[year]), d1 = eduDemand(ctx, id, scen[year]);
       const wi = wageIdx(ctx, year, p), t0 = taxSeries(ctx, id, agesFn(ctx, id, base), p)[year] / wi, t1 = taxSeries(ctx, id, agesFn(ctx, id, scen), p)[year] / wi;
       const dw = isFinite(need) ? need / 2.4 : null;
-      rows.push({ area: "Rahvaarv " + year, now: fmt(total(base[year])) + " (valitud stsenaarium)", effect: "siht " + fmt(target), note: need === 0 ? "Siht täitub ilma lisarändeta" : isFinite(need) ? "Vajab lisarännet " + sgn(need) + " inimest aastas" : "Siht ei ole realistlik (üle 4000 in/a)" });
+      rows.push({ area: "Rahvaarv " + year, now: fmt(total(base[year])) + " (valitud stsenaarium)", effect: "siht " + fmt(target), note: need === 0 ? "Siht täitub ilma lisarändeta" : isFinite(need) ? "Vajab lisarännet " + sgn(need) + " inimest aastas väljastpoolt valda (pererände koosseis, jäävad paikseks). Rahvastikubilansi tulemus, mitte hinnang meetmega saavutatavale rändele" : "Siht ei ole realistlik (üle 4000 in/a)" });
       if (isFinite(need) && need > 0) {
         rows.push({ area: "Eluruumid", now: "–", effect: "≈ " + fmt(dw) + " eluruumi aastas", note: "2,4 elanikku eluruumi kohta (hinnang)" });
         rows.push({ area: "Lasteaiakohad", now: fmt(d0.la), effect: sgn(d1.la - d0.la) + " last (" + year + ")", note: "Võrreldes valitud stsenaariumiga" });
@@ -426,7 +431,7 @@
         rows.push({ area: "Tulumaks", now: eurT(t0), effect: sgn((t1 - t0) / 1000) + " tuh € aastas", note: "2026. aasta hindades · " + ctx.tax.T[id].src });
       }
       const text = u.name + " arengukava siht on " + fmt(target) + " elanikku aastaks " + year + ". Valitud stsenaariumi järgi on rahvaarv sel aastal " + fmt(total(base[year])) + ". " +
-        (need === 0 ? "Siht täitub ilma lisarändeta." : isFinite(need) ? "Sihi saavutamiseks peaks valda lisaks rändama keskmiselt " + fmt(need) + " inimest aastas, mis tähendab umbes " + fmt(dw) + " uut eluruumi aastas. Lasteaiakohtade nõudlus suureneb siis " + fmt(d1.la - d0.la) + " ja koolikohtade nõudlus " + fmt(d1.sc - d0.sc) + " võrra ning tulumaksu laekumine " + eurT(t1 - t0) + " aastas." : "Sihi saavutamiseks vajalik ränne ületab 4000 inimest aastas; siht ei ole mudeli järgi realistlik.");
+        (need === 0 ? "Siht täitub ilma lisarändeta. Valitud rändemuster on ajaloolise perioodi muster, mitte kõige tõenäolisem tulevik." : isFinite(need) ? "Sihi saavutamiseks peaks valda lisaks rändama keskmiselt " + fmt(need) + " inimest aastas väljastpoolt valda, eeldusel et nad on mudeli pererände koosseisuga ja jäävad paikseks. See on rahvastikubilansi tulemus, mitte hinnang meetmega saavutatavale rändele. Selline ränne tähendab umbes " + fmt(dw) + " uut eluruumi aastas. Lasteaiakohtade nõudlus suureneb siis " + fmt(d1.la - d0.la) + " ja koolikohtade nõudlus " + fmt(d1.sc - d0.sc) + " võrra ning tulumaksu laekumine " + eurT(t1 - t0) + " aastas." : "Sihi saavutamiseks vajalik ränne ületab 4000 inimest aastas; siht ei ole mudeli järgi realistlik.");
       return { type, rows, text, need };
     }
     throw new Error("Tundmatu otsuse tüüp: " + type);
@@ -443,13 +448,15 @@
     ok("T1", "Rahvaarvu prognoos kattub põhimudeliga (5 rändemustrit × 4 valda + maakond, 2031 ja 2036)", maxd < 1e-6, "suurim erinevus " + maxd.toExponential(1) + " inimest");
     let maxv = 0; V.forEach(u => { const P = project(ctx, u, {})[2036]; P.forEach((x, g) => maxv = Math.max(maxv, Math.abs(x - ref.PROJ2036[u][g]))); });
     ok("T2", "Vanuserühmad 2036 kattuvad põhimudeliga (vaikestsenaarium)", maxv < 1e-3, "suurim erinevus " + maxv.toExponential(1));
-    let maxc = 0; V.forEach(u => ["k", "f", "fOld", "fMid", "uaExc", "bal3"].forEach(k => maxc = Math.max(maxc, Math.abs(ctx.units[u].cal[k] - ref.CAL[u][k]))));
-    ok("T3", "Kalibreerimisparameetrid (suremus, sündimus, rändeerand) kattuvad", maxc < 1e-9, "suurim erinevus " + maxc.toExponential(1));
+    let maxc = 0; V.forEach(u => ["k", "k1620", "k2125", "f", "fOld", "fMid", "uaExc", "bal3", "korr1", "korr2"].forEach(k => maxc = Math.max(maxc, Math.abs(ctx.units[u].cal[k] - ref.CAL[u][k]))));
+    ok("T3", "Kalibreerimisparameetrid (suremus kolmel perioodil, sündimus, rändeerand, registriparandus) kattuvad", maxc < 1e-9, "suurim erinevus " + maxc.toExponential(1));
     let maxt = 0; V.forEach(u => { const P = project(ctx, u, {}), t = taxSeries(ctx, u, agesFn(ctx, u, P)); [2026, 2030, 2036].forEach(y => maxt = Math.max(maxt, Math.abs(t[y] - ref.tax[u][y]))); });
     ok("T4", "Tulumaksu prognoos kattub põhimudeliga (2026, 2030, 2036)", maxt < 0.01, "suurim erinevus " + maxt.toFixed(4) + " €");
     let maxe = 0; V.forEach(u => { const d = eduDemand(ctx, u, project(ctx, u, {})[2036]); maxe = Math.max(maxe, Math.abs(d.la - ref.edu[u].la), Math.abs(d.sc - ref.edu[u].sc)); });
     ok("T5", "Lasteaia- ja koolinõudlus 2036 kattub põhimudeliga", maxe < 1e-6, "suurim erinevus " + maxe.toExponential(1));
     const rg = ctx.regions.RAPLA; ok("T6", "Piirkonna trendid (sündimuse kalle, eluea kasv) kattuvad", near(rg.fslope, ref.FSLOPE, 1e-12) && near(rg.lam, ref.LAM, 1e-12), "kalle " + rg.fslope.toFixed(5) + ", λ " + rg.lam.toFixed(5));
+    if (ref.bt) { let maxb = 0; V.forEach(u => { const b = backtest(ctx, u); maxb = Math.max(maxb, Math.abs(b.ins - ref.bt[u].ins), Math.abs(b.oos - ref.bt[u].oos)); });
+      ok("T6b", "Tagasitest 2021→2026 kattub põhimudeliga", maxb < 1e-6, "suurim erinevus " + maxb.toExponential(1) + " inimest"); }
     // sisemine kooskõla
     let bad = [], maxa = 0; Object.keys(ctx.units).forEach(u => { const pop = ctx.data.pop[u]; Object.keys(pop.age).forEach(y => { const d = pop.tot[y] - sum(pop.age[y]); if (d) { bad.push(u + " " + y + " (" + (d > 0 ? "+" : "") + d + ")"); maxa = Math.max(maxa, Math.abs(d)); } }); });
     ok("T7", "Lähteandmed: vanuserühmade summa erineb rahvaarvust kõige rohkem 3 inimese võrra", maxa <= 3, bad.length ? bad.length + " juhtu, suurim " + maxa + " inimest: " + bad.join(", ") : "kõik summad täpsed");
@@ -458,7 +465,7 @@
     const H = housingImpact(ctx, "Kohila", { n: 120, type: "korter", start: 2028, years: 1, occ: 1, outside: 1, hh: 2 }, {}), r28 = H.rows.find(r => r.y === 2028);
     ok("T9", "Elamuarendus: lisandunud elanikud jõuavad rahvaarvu (240 inimest, 2028)", near(r28.dPop, 240, 0.5), "rahvaarvu muutus " + r28.dPop.toFixed(2));
     let maxi = 0; Object.keys(ctx.units).forEach(u => maxi = Math.max(maxi, Math.abs(backtest(ctx, u).errIns)));
-    ok("T10", "Mehaanika: tegeliku 2021–2026 rändega kordab mudel 2026. aastat alla 0,5% veaga", maxi < 0.005, "suurim viga " + (maxi * 100).toFixed(2) + "%");
+    ok("T10", "Kalibreerimise kontroll: 2021–2026 bilansilise rändega kordab mudel 2026. aastat alla 0,5% veaga (ootuspärane, ei tõenda prognoosi täpsust)", maxi < 0.005, "suurim viga " + (maxi * 100).toFixed(2) + "%");
     let maxs = 0; Object.keys(ctx.units).forEach(u => { const L = settlementLayer(ctx, u, project(ctx, u, {}), 2036); if (L) maxs = Math.max(maxs, Math.abs(sum(L.map(r => r.share)) - 1)); });
     ok("T11", "Asulakiht: osakaalud summeeruvad 100%-ni", maxs < 1e-9, "suurim kõrvalekalle " + maxs.toExponential(1));
     // T12–T15: etapp 2 (otsused E1–E10)
