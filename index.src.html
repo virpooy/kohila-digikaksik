@@ -469,7 +469,7 @@ function rRahvastik() {
       ${more("Täpsed väärtused", table(["Vanuserühm"].concat(bandsY.map(String), ["Muutus"]), bv.map(b => [b.l].concat(b.v.map(f0), [pc(b.v[2] / b.v[0] - 1)])).concat([{ cls: "tot", cells: ["Kokku"].concat(bandsY.map(y => f0(popAt(id, y))), [pc(P36 / P26 - 1)]) }])))}</div>
     <div class="box">${ttl(`Lasteaia- ja koolinõudlus · ${ctx.eduBase[id] ? esc(ctx.eduBase[id].src) : "liikmete summa"}`, `Lapsi ${pc(e36.la / e26.la - 1, 0)}, õpilasi ${pc(e36.sc / e26.sc - 1, 0)} aastaks 2036`)}
       <div class="chart" id="eduChart"></div>${legend([{ name:"lasteaialapsed", color:css("--dev") }, { name:"õpilased (põhikool + gümnaasium)", color:css("--accent") }])}
-      ${more("Kuidas see on arvutatud", `<p class="note">Nõudlus muutub koos 1–6- ja 7–18-aastaste arvuga; baas on 2025/26 õppeaasta laste ja õpilaste arv.${id === "Rae" ? " Rae baas on hinnang Kohila osalusmäära järgi, sest Rae haridusandmeid eelmudelis ei ole." : ""}</p>`)}
+      ${more("Kuidas see on arvutatud", `<p class="note">Nõudlus muutub koos 1–6- ja 7–18-aastaste arvuga; baas on 2025/26 õppeaasta laste ja õpilaste arv.${id === "Rae" ? " Rae õpilaste baas on 2023/24 arv, viidud 2025/26-sse vanuserühmade järgi." : ""}</p>`)}
       ${foot("EHIS / HaridusSilm · kohortmudel", csvBtn("edu", "haridusnoudlus_" + id + ".csv", ["aasta", "lasteaialapsed", "opilased"], eduRows))}</div>
   </div>
   ${setBox}`;
@@ -728,7 +728,7 @@ function rKonf() {
       <li>Lisa asulad (RL21003) faili <code>data/settlements.json</code> ja koolidega asulad faili <code>data/edu.json</code>.</li>
       <li>Kui haridusandmeid ei ole, märgi <code>"edu":"hinnang"</code>.</li>
       <li>Ava leht: enesetest kontrollib andmete kooskõla.</li></ol>`)}
-  ${more("Rae vald pilootvallana", `<p class="note">Rae andmed on Statistikaameti API-st (09.10.2026). Rae sündimuse ja eluea trend arvutatakse Rae ja Harju maakonna andmetest. Vallalt on vaja: laste ja õpilaste arv, ühikukulud, tulumaksu 2026 kuuandmed, eelarvestrateegia ja netovõlg, kohtade arv ning arengukava siht. Koolid: ${esc(D.edu.raeSchools.join(", "))}.</p>`)}</div>`;
+  ${more("Rae vald pilootvallana", `<p class="note">Rahvastik Statistikaameti API-st (09.10.2026); sündimuse ja eluea trend Rae ja Harju maakonna andmetest. Avalikest allikatest (31.10.2026, <code>docs/andmed/rae-avalikud-andmed.md</code>): lasteaialapsed ja -kohad, õpilased ja koolikohad, RR302 kulud, MTA tulumaks 2025–2026, eelarvestrateegia 2027–2030. Arvulist rahvaarvu sihti Rae arengukavas ei ole. Vallalt on veel vaja: õpilaste arv 2025/26 ja kohtade arv asutuste kaupa. Koolid: ${esc(D.edu.raeSchools.join(", "))}.</p>`)}</div>`;
 }
 
 /* ---------- juhtimine ---------- */

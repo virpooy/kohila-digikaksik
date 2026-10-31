@@ -33,3 +33,16 @@ Kogutud 31.10.2026. Ainult koondandmed, isikuandmeid ei ole. Andmeid ei ole veel
 - Rae valla arengukava 2024–2030 lisa 1, lähteolukorra analüüs 2024: https://www.riigiteataja.ee/aktilisa/4281/1202/4032/Lisa2.pdf
 - Rae Sõnumid 02/2026, „Ülevaade Rae valla eelarvest 2026”: https://www.rae.ee/sites/default/files/documents/2026-02/Rae%20S%C3%B5numid%200226.pdf
 - ERR, 20.01.2026, „Madal sündimus on lasteaiakohtade saadavusele mõjunud positiivselt”: https://www.err.ee/1609916390/madal-sundimus-on-lasteaiakohtade-saadavusele-mojunud-positiivselt
+
+## Lisatud mudelisse (31.10.2026, Peetri kinnitus)
+
+Skript `tools/rae_andmed.js` kirjutab andmed failidesse `edu.json`, `ext.json` ja `fin.json`; `kov.json`-is on Rae `"edu": "andmed"`. Mootorit ei muudetud, enesetestid 16/16. Kohila ja teiste Raplamaa valdade tulemused ei muutunud (kontrollitud: Kohila 120 korterit neto 2036 −2 146 € täiskuluga ja +47 589 € piirkuluga, tulumaks 2026 12,47 mln €).
+
+| Andmestik | Väärtus mudelis | Märkus |
+|---|---|---|
+| Lasteaialapsed | 1 946 | Valla lasteaedades 01.11.2025 |
+| Õpilased 2025/26 | põhikool 3 754, gümnaasium 308 | 2023/24 arvud (3 627 ja 259) viidud 2025/26-sse vanuserühmade osalusmääraga (sama valem nagu mootoris) |
+| Kohad | lasteaed 2 360, kool 4 408 | 3 641 + 288 + Kindluse Kooli juurdeehitus 155 + 324. Juurdeehitus on arvestatud, sest selle investeering ja laen on juba eelarvestrateegias (muidu arvestaks mudel sama investeeringu topelt). **Kuni 2028 on tegelik koolikohtade arv 3 929 ja nõudlus 4 062–4 193, seega 2026–2028 on koolikohti umbes 130–260 puudu** |
+| Ühikukulud (RR302 2023–2025 mediaan) | lasteaialaps 11 908 €, õpilane 5 653 € | Alushariduse kulu sisaldab erasektorilt ostetud teenust (2025: 3,85 mln €), kuid lapsi arvestatakse ainult valla lasteaedades, seega lasteaialapse kulu on ülehinnatud |
+| Tulumaks 2026 | 50,39 mln € (MTA jaan–sept + okt–dets 2025 × kasvutempo) | Valla eelarves 49,08 mln € |
+| Eelarvestrateegia | 2025–2030 tulud, tulem, netovõlg, investeeringud, laenud | Seletuskiri on volikogule kinnitamiseks; kinnitamise kuupäev tuleb üle kontrollida |
