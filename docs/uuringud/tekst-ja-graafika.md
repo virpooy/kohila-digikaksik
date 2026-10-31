@@ -60,3 +60,15 @@ Järeldused: lehel on 14 tabelit ja 5 joonist. 59% sõnadest ja 56% lehe kõrgus
 - Nielsen, J. (2008). How little do users read? Nielsen Norman Group. (Weinreich, H., Obendorf, H., Herder, E., & Mayer, M. (2008). Not quite the average: An empirical study of Web use. ACM Transactions on the Web, 2(1), 5.)
 - Nielsen, J., & Morkes, J. (1997). How users read on the Web. Viidatud: plainlanguage.gov, Federal Plain Language Guidelines.
 - Ülejäänud: magistritöö kirjanduse loetelu (V-tunnused).
+
+## Tulemus (31.10.2026, kõik peatükid ümber tehtud)
+
+| | Enne (a052499) | Pärast |
+|---|---|---|
+| Otsustaja vaates nähtavaid sõnu (01–06) | 1 958 | 997 |
+| SVG-jooniseid otsustaja vaates | 5 | 15 |
+| Nähtavaid tabeleid otsustaja vaates | 7 | 0 (kõik „Täpsed väärtused” all) |
+
+Uued joonised: sihi joonis „% sihist”, lapsed vs kohad, tulumaks, vanuserühmade muutus, põhikooliealised asulate kaupa, eelarve kosk (2×), kohtade puudujääk valdade kaupa (lasteaed, kool), netovõlakoormus vs 60% piir, otsuse joonis (elamu / kohad / siht), töökoha asukoht valdade kaupa, koolitee 2026 → 2036, tagasitesti soojuskaart, kate lubaduste ja kasutusjuhtude kaupa, andmesõnastik valdkondade kaupa, testide ruudustik. Arendaja peatükid (07–11) on eraldi vaates „Arendajale”.
+
+Leitud vastuolu (mootoris, muutmata): otsuse eelhinnangu seletuskirja mustand arvutab „tulu ja kulu vahe” ilma tasandusfondita (Kohila 120 korterit: +87 tuh €), joonis ja elamuarenduse peatükk arvestavad tasandusfondi kadu (−2 tuh € täiskuluga). Parandus vajab Peetri kinnitust.
