@@ -21,8 +21,12 @@ function parseMta(csv, names) {
 async function mta(fin) {
   const page = await fetch("https://www.emta.ee/eraklient/amet-uudised-ja-kontakt/uudised-pressiinfo-statistika/statistika-ja-avaandmed").then(r => r.text());
   const year = new Date().getFullYear(), m = page.match(new RegExp(`href="([^"]*ncfailid\\.emta\\.ee/[^"]*tulumaks_${year}\\.csv[^"]*)"`, "i"));
-  if (!m) { log.push("MTA: " + year + ". aasta csv linki ei leitud"); return false; }
-  const csv = await fetch(m[1].replace(/&amp;/g, "&")).then(r => r.text());
+  /* Leht võib robotile anda teise sisu; siis kasuta teadaolevat jagamislinki (data/sources.json). */
+  const SRC = JSON.parse(fs.readFileSync(path.join(DIR, "sources.json"))), url = m ? m[1].replace(/&amp;/g, "&") : (SRC.mta || {})[year];
+  if (!url) { log.push(`MTA: ${year}. aasta csv linki ei leitud (lehe pikkus ${page.length}, ncfailid ${(page.match(/ncfailid/g) || []).length})`); return false; }
+  if (!m) log.push("MTA: link data/sources.json-ist");
+  const csv = await fetch(url).then(r => r.text());
+  if (!/Kohila vald/.test(csv)) { log.push("MTA: csv ei sisalda oodatud ridu (viga)"); return false; }
   const P = parseMta(csv, units.map(u => u.name)); let ch = 0;
   if (year !== 2026) { log.push("MTA: aasta " + year + " – mootori väljad on tm26/tm25, vajab mootori uuendust; jätan muutmata"); return false; }
   units.forEach(u => { const r = P[u.name]; if (!r || !r.cur.length) return; const old = JSON.stringify([fin.MTA.tm26[u.id], fin.MTA.tm25[u.id]]);
