@@ -284,7 +284,15 @@ function goalChart(el, G, name) {
 /* Andmete allalaadimine CSV-na (soovitus S10). */
 const CSV = {};
 const csvBtn = (key, name, head, rows) => { CSV[key] = { name, text: [head].concat(rows).map(r => r.map(v => typeof v === "number" ? String(Math.round(v * 100) / 100).replace(".", ",") : '"' + String(v).replace(/"/g, '""') + '"').join(";")).join("\n") }; return `<button type="button" class="btn ghost sm" data-csv="${key}">Lae andmed alla (CSV)</button>`; };
-document.addEventListener("click", e => { const b = e.target.closest("[data-csv]"); if (!b || !CSV[b.dataset.csv]) return; const c = CSV[b.dataset.csv], url = URL.createObjectURL(new Blob(["﻿" + c.text], { type: "text/csv;charset=utf-8" })), a = document.createElement("a"); a.href = url; a.download = c.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); });
+/* claude.ai artefaktis käib salvestamine platvormi „downloads” võimekuse kaudu (vaataja kinnitab); mujal (GitHub Pages) tavalise lingiga. */
+let DL = null; if (window.claude && typeof window.claude.use === "function") window.claude.use("downloads").then(d => { DL = d; }).catch(() => {});
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-csv]"); if (!b || !CSV[b.dataset.csv]) return;
+  const c = CSV[b.dataset.csv], data = "\ufeff" + c.text;
+  if (DL) { try { await DL.save({ filename: c.name, data }); } catch (err) { if (err && err.code === "declined") return; b.textContent = "Allalaadimine pole siin saadaval"; } return; }
+  if (window.claude) { b.textContent = "Allalaadimine pole siin saadaval"; return; }
+  const url = URL.createObjectURL(new Blob([data], { type: "text/csv;charset=utf-8" })), a = document.createElement("a"); a.href = url; a.download = c.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
 const foot = (src, btn) => `<div class="cfoot"><span>${src} · andmed ${DATA_DATE} · mootor ${esc(E.VERSION.split(" ")[0])}</span>${btn || ""}</div>`;
 const legend = items => `<div class="legend">${items.map(i => `<span><i class="${i.dash ? "d" : ""}" style="--c:${i.color}"></i>${esc(i.name)}</span>`).join("")}</div>`;
 
