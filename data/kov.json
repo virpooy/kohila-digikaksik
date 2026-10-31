@@ -11,6 +11,7 @@
       "edu": "edu.json",
       "inMaak": true,
       "pilot": false,
+      "goals": [{"kind": "pop", "label": "Rapla vald üle 15 000 elaniku", "v": 15000, "year": 2035, "liik": "ametlik", "doc": "Rapla valla arengukava 2035"}, {"kind": "share", "label": "Tööealiste osakaal üle 60%", "a": 4, "b": 12, "op": ">=", "v": 0.6, "year": 2035, "liik": "ametlik", "doc": "Rapla valla arengukava 2035", "note": "Arengukavas 18–64; mudelis viieaastased rühmad, seega 20–64 (lähend, osakaal ~2 p.p. väiksem)"}],
       "target": {
         "pop": 15000,
         "year": 2035,
@@ -28,6 +29,7 @@
       "edu": "edu.json",
       "inMaak": true,
       "pilot": true,
+      "goals": [{"kind": "pop", "label": "Kohila vald 10 000 elanikku aastaks 2035", "v": 10000, "year": 2035, "liik": "ametlik", "doc": "Kohila valla arengukava 2023–2035"}, {"kind": "growth", "label": "Kohila kasv 80–120 elanikku aastas", "lo": 80, "hi": 120, "y1": 2026, "y2": 2035, "liik": "prognoos", "doc": "Kohila valla arengukava 2023–2035", "note": "Arengukava rändestsenaarium 1, mitte eesmärk"}],
       "target": {
         "pop": 10000,
         "year": 2035,
@@ -58,6 +60,7 @@
       "edu": "edu.json",
       "inMaak": true,
       "pilot": false,
+      "goals": [{"kind": "pop", "label": "Kehtna vald 6000 elanikku aastaks 2035", "v": 6000, "year": 2035, "liik": "ametlik", "doc": "Kehtna valla arengukava 2035"}, {"kind": "share", "label": "Tööealiste (15–64) osakaal üle 65%", "a": 3, "b": 12, "op": ">=", "v": 0.65, "year": 2035, "liik": "ametlik", "doc": "Kehtna valla arengukava 2035"}, {"kind": "proxy", "label": "Kehtna maksumaksjaid 2750", "base": 2464, "baseYear": 2022, "a": 4, "b": 12, "v": 2750, "year": 2035, "liik": "ametlik", "doc": "Kehtna valla arengukava 2035", "note": "Maksumaksjad = 2464 (2022) × 20–64-aastaste arvu muutus (hinnang)"}],
       "target": {
         "pop": 6000,
         "year": 2035,
@@ -75,6 +78,7 @@
       "edu": "andmed",
       "inMaak": false,
       "pilot": true,
+      "goals": [{"kind": "growth", "label": "Kontrollitud rahvastiku kasv 565–775 elanikku aastas", "lo": 565, "hi": 775, "y1": 2026, "y2": 2030, "liik": "ametlik", "doc": "Rae valla arengukava 2024–2030", "note": "Piirkondade summa: Peetri 500 ±15%, Jüri 100 ±15%, Lagedi 50 ±20%, Vaida 20 ±25%"}],
       "target": null,
       "ehak": "0653"
     }
@@ -91,6 +95,7 @@
         "Marjamaa",
         "Kehtna"
       ],
+      "goals": [{"kind": "pop", "label": "Rahvaarv 35 000 aastaks 2035", "v": 35000, "year": 2035, "liik": "ametlik", "doc": "Raplamaa arengustrateegia 2035+"}, {"kind": "share", "label": "Laste (0–14) osakaal püsib 17,1%", "a": 0, "b": 2, "op": ">=", "v": 0.171, "year": 2035, "liik": "ametlik", "doc": "Raplamaa arengustrateegia 2035+"}, {"kind": "share", "label": "65+ osakaal mitte üle Eesti keskmise", "a": 13, "b": 17, "op": "<=", "v": 0.235, "year": 2035, "liik": "ametlik", "doc": "Raplamaa arengustrateegia 2035+", "note": "Eesti keskmine 2035 = 23,5% (2022–2026 trendi jätk, hinnang Raplamaa arengukangast)"}],
       "target": {
         "pop": 35000,
         "year": 2035,

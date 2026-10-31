@@ -1,0 +1,30 @@
+name: Avaandmete uuendus
+# Kord kuus: Maksu- ja Tolliameti tulumaks ja Statistikaameti RR302. Salvestab ainult siis, kui enesetestid läbivad.
+on:
+  schedule:
+    - cron: "17 6 5 * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Uuenda andmed
+        run: node tools/update_open_data.js | tee uuendus.txt
+      - name: Enesetestid
+        run: node engine.test.js
+      - name: Salvesta ja avalda
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          if git diff --quiet data/; then echo "Muudatusi ei ole"; exit 0; fi
+          git config user.name "andmete-uuendus"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/
+          git commit -m "Avaandmete uuendus $(date +%Y-%m-%d)" -m "$(cat uuendus.txt)"
+          git push
+          gh workflow run ci.yml --ref main

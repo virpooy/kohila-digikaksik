@@ -1,0 +1,48 @@
+{
+ "_doc": "Planeeringukontrolli detailplaneeringud (tools/pk_export.py). units = eluruumid tüübi järgi planeeringukontrolli väljalt meta.moju; tühi = sisestamata.",
+ "updated": "2026-10-31",
+ "rows": [
+  {
+   "id": "dp-muv73t8t27xs",
+   "name": "Kivisilla ja Kivisalu detailplaneering",
+   "asula": "Vana-Aespa küla",
+   "vald": "Kohila vald",
+   "stage": "algatamisel",
+   "dates": {},
+   "goal": "Kivisilla ja Kivisalu maaüksustele üksikelamukruntide moodustamine ning ehitusõiguse, juurdepääsude ja tehnovõrkude määramine",
+   "housing": true,
+   "units": {},
+   "start": null,
+   "years": null
+  },
+  {
+   "id": "dp-muwk0l55en6f",
+   "name": "Jõe tn 1 ja lähiala detailplaneering",
+   "asula": "Kohila alev",
+   "vald": "Kohila vald",
+   "stage": "algatamisel",
+   "dates": {},
+   "goal": "Kohila mõisa teenijate maja rekonstrueerimine ja juurdeehitus Kohila Mõisakooli õppehooneks ja kogukonna kultuurikeskuseks",
+   "housing": false,
+   "units": {},
+   "start": null,
+   "years": null
+  },
+  {
+   "id": "dp-muzgx6xyvbh7",
+   "name": "Konksu maaüksuse detailplaneering",
+   "asula": "Urge küla",
+   "vald": "Kohila vald",
+   "stage": "vastu võetud",
+   "dates": {
+    "algatamine": "2021-03-08",
+    "vastuvotmine": "2026-05-26"
+   },
+   "goal": "Olemasoleva maatulundusmaa jagamise teel moodustada elamumaad, haljasalad, üldkasutatavad maad ja transpordimaa ning määrata ehitusõigus elamute, abihoonete, teede ja rajatiste rajamiseks segafunktsiooniga maa-alal.",
+   "housing": true,
+   "units": {},
+   "start": null,
+   "years": null
+  }
+ ]
+}
