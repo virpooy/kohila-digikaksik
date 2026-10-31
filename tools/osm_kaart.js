@@ -4,7 +4,7 @@
    Geomeetria lihtsustatakse (Douglas–Peucker) ja koordinaadid ümardatakse 5 kohani (~1 m). © OpenStreetMapi kaastöötajad, ODbL. */
 "use strict";
 const fs = require("fs"), path = require("path");
-const VALLAD = [["Kohila", "Kohila vald"], ["Rae", "Rae vald"]];
+const VALLAD = (process.argv[2] ? process.argv[2].split(",") : ["Kohila", "Rae", "Rapla", "Marjamaa", "Kehtna"]).map(id => [id, { Marjamaa: "Märjamaa" }[id] ? "Märjamaa vald" : id + " vald"]);
 const EP = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
 const log = (...a) => console.log(...a);
 
@@ -114,8 +114,10 @@ async function vald(id, name) {
 }
 
 (async () => {
-  const res = { _doc: "Kaardi aluskiht OpenStreetMapist (tools/osm_kaart.js). Koordinaadid [lon,lat,lon,lat,…], 5 komakohta, lihtsustatud. Teeklassid: 1 põhimaantee, 2 tugimaantee, 3 kõrvalmaantee, 4 ühendustee, 5 kohalik tänav/tee.", attr: "© OpenStreetMapi kaastöötajad (ODbL)", date: new Date().toISOString().slice(0, 10), vald: {} };
-  for (const [id, name] of VALLAD) { res.vald[id] = await vald(id, name); await new Promise(s => setTimeout(s, 3000)); }
-  const f = path.join(__dirname, "..", "data", "map.json"); fs.writeFileSync(f, JSON.stringify(res));
-  log(`data/map.json ${Math.round(fs.statSync(f).size / 1024)} kB`);
+  const dir = path.join(__dirname, "..", "data", "map"); fs.mkdirSync(dir, { recursive: true });
+  for (const [id, name] of VALLAD) {
+    const res = { _doc: "Kaardi aluskiht OpenStreetMapist (tools/osm_kaart.js). Koordinaadid [lon,lat,lon,lat,…], 5 komakohta, lihtsustatud. Teeklassid: 1 põhimaantee, 2 tugimaantee, 3 kõrvalmaantee, 4 ühendustee, 5 kohalik tänav/tee.", attr: "© OpenStreetMapi kaastöötajad (ODbL)", date: new Date().toISOString().slice(0, 10), ...(await vald(id, name)) };
+    const f = path.join(dir, id + ".json"); fs.writeFileSync(f, JSON.stringify(res)); log(`data/map/${id}.json ${Math.round(fs.statSync(f).size / 1024)} kB`);
+    await new Promise(s => setTimeout(s, 3000));
+  }
 })().catch(e => { console.log("viga:", e.message); process.exit(1); });
