@@ -60,33 +60,6 @@ function hiResult() {
   ${meta("TwinEngine housingImpact", csvBtn("hi", "elamuarendus_" + inp.unit + ".csv", ["aasta", "lisandub", "rahvaarv", "lasteaed", "kool", "tulumaks_eur", "tasandusfond_eur", "taiskulu_eur", "piirkulu_eur", "neto_eur"], H.rows.filter(r => r.y > 2026).map(r => [r.y, r.added || 0, r.dPop, r.dLa, r.dSc, r.dTaxR, -r.dTf, -r.dCost, r.dCostMarg != null ? -r.dCostMarg : "", r.dNet])))}`;
   impactCharts(H, "#hiA2", "#hiB2");
 }
-const MAPL = { asulad: true, yt: true, koolid: true, dp: true };
-function secKaart(el) {
-  const vid = isAgg(S.unit) ? "Kohila" : S.unit, V = D.geo.vald[vid];
-  if (!V) { el.innerHTML = ttl("Kaart", "Kaart on Kohila ja Rae valla kohta", "h2") + `<p class="note">Vali ülal Kohila või Rae.</p>`; return; }
-  const P = D.geo.place.filter(p => p.v === vid), I = D.geo.inst.filter(x => x.v === vid), T = new Map(D.transit.rows.filter(r => r[1] === vid).map(r => [r[0], r]));
-  const L = D.settlements[vid] ? E.settlementLayer(ctx, vid, proj(vid), 2036) : [], popOf = n => { const r = L.find(x => asulaKey(x.n) === n); return r ? r.pop : null; }, DP = dpOf(vid);
-  const weak = P.filter(p => T.get(p.n) && T.get(p.n)[3] < 10).length;
-  el.innerHTML = `${ttl(`${esc(ctx.units[vid].name)} · asulad, koolid, ühistransport ja planeeringud`, `${weak} asulas ${P.length}-st on tööpäeval alla 10 bussi- või rongiväljumise`, "h2")}
-  <div class="tabs" id="mapL" role="group" aria-label="Kaardikihid">${[["asulad", "Asulad (rahvaarv 2036)"], ["yt", "Ühistransport"], ["koolid", "Koolid ja lasteaiad"], ["dp", "Planeeringud"]].map(([k, t]) => `<button type="button" data-l="${k}" aria-pressed="${MAPL[k]}">${t}</button>`).join("")}</div>
-  <div class="inst"><div class="chart" id="mapS"></div>
-  <div class="legend"><span>○ ringi suurus: rahvaarv 2036</span><span>tume ring: palju otseühendusi Tallinna kesklinna</span><span style="color:var(--crit)">● ühistranspordita</span><span>■ kool</span><span style="color:var(--a-kid)">▲ lasteaed</span><span style="color:var(--loss)">◆ detailplaneering</span></div></div>
-  ${meta(esc(D.geo.attr) + " · Transpordiameti GTFS " + esc(D.transit.date) + " · planeeringukontroll " + esc(D.dp.updated))}`;
-  $("#mapL").onclick = e => { const b = e.target.closest("button"); if (b) { MAPL[b.dataset.l] = !MAPL[b.dataset.l]; secKaart(el); } };
-  const box = $("#mapS"), W = W_(box), lats = V.map(p => p[0]), lons = V.map(p => p[1]), la0 = Math.min(...lats), la1 = Math.max(...lats), lo0 = Math.min(...lons), lo1 = Math.max(...lons), k = Math.cos((la0 + la1) / 2 * Math.PI / 180);
-  const pad = 16, sx = Math.min((W - 2 * pad) / ((lo1 - lo0) * k), (Math.min(620, W * 1.1) - 2 * pad) / (la1 - la0)), H = Math.round((la1 - la0) * sx + 2 * pad), ox = (W - (lo1 - lo0) * k * sx) / 2, X = lo => ox + (lo - lo0) * k * sx, Y = la => pad + (la1 - la) * sx;
-  let g = `<path d="M${V.map(p => X(p[1]).toFixed(1) + "," + Y(p[0]).toFixed(1)).join("L")}Z" fill="${css("--surf2")}" stroke="${css("--line2")}" stroke-width="1.5"/>`;
-  const mxT = Math.max(1, ...[...T.values()].map(r => r[4])), mxP = Math.max(1, ...P.map(p => popOf(p.n) || 0));
-  P.forEach(p => { const t = T.get(p.n), pp = popOf(p.n), r = pp && MAPL.asulad ? 4 + 18 * Math.sqrt(pp / mxP) : 5, x = X(p.ll[1]), y = Y(p.ll[0]);
-    const none = MAPL.yt && t && t[3] === 0, col = none ? css("--crit") : css("--a-work"), op = MAPL.yt && t ? .2 + .8 * Math.sqrt(t[4] / mxT) : .35;
-    const tip = `<b>${esc(p.n)}</b>${pp ? `<br>${f0(pp)} elanikku 2036 (hinnang)` : ""}${t ? `<br>${t[3]} väljumist päevas · otse Tallinna kesklinna ${t[4]}${t[6] != null ? " · kiireim " + t[6] + " min" : ""}` : ""}`;
-    if (MAPL.asulad || MAPL.yt) g += `<circle cx="${x}" cy="${y}" r="${Math.max(r, 7)}" fill="transparent" data-tip="${esc(tip)}"/><circle cx="${x}" cy="${y}" r="${r}" fill="${col}" fill-opacity="${op}" stroke="${col}" pointer-events="none"/>`;
-    if (pp || (t && t[4] > 30)) g += `<text x="${x + r + 3}" y="${y + 4}" class="t-lab" style="font-family:var(--f-body);font-size:11.5px" pointer-events="none">${esc(p.n)}</text>`; });
-  if (MAPL.koolid) I.forEach(q => { const x = X(q.ll[1]), y = Y(q.ll[0]); g += q.t === "K" ? `<rect x="${x - 4.5}" y="${y - 4.5}" width="9" height="9" fill="${css("--ink")}" data-tip="${esc("<b>" + esc(q.n) + "</b><br>kool")}"/>` : `<path d="M${x},${y - 6}L${x + 6},${y + 4.5}L${x - 6},${y + 4.5}Z" fill="${css("--a-kid")}" data-tip="${esc("<b>" + esc(q.n) + "</b><br>lasteaed")}"/>`; });
-  if (MAPL.dp) DP.forEach((d, i) => { const pl = P.find(p => p.n === asulaKey(d.asula)) || P.find(p => asulaKey(d.asula).includes(p.n)); if (!pl) return; const x = X(pl.ll[1]) + 9 + i * 3, y = Y(pl.ll[0]) - 9; g += rhomb(x, y, 7, css("--loss"), css("--surf")).replace("<path", `<path data-tip="${esc(`<b>${esc(d.name)}</b><br>${esc(d.stage)}${Object.keys(d.units).length ? "" : "<br>eluruumide arv puudub"}`)}"`); });
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Kaart: ${P.length} asulat, ${I.length} kooli ja lasteaeda, ${DP.length} detailplaneeringut`)}">${g}</svg>`;
-}
-
 /* =============== 6. Stsenaariumid =============== */
 const SCN_DEF = () => [{ name: "A: praegune suund", mig: "mean", extra: 0, fert: 0, dp: false, n: 0, type: "korter", start: 2028, years: 2, capLa: "", capSc: "" },
   { name: "B: planeeringud ellu", mig: "mean", extra: 0, fert: 0, dp: true, n: 0, type: "korter", start: 2028, years: 2, capLa: "", capSc: "" },

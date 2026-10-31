@@ -16,6 +16,9 @@
   --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
   --sp1:4px;--sp2:8px;--sp3:12px;--sp4:16px;--sp5:24px;--sp6:36px;--sp7:56px;
   --bgimg:radial-gradient(1100px 420px at 85% -10%,rgba(190,140,245,.06),transparent 60%);
+  /* kaart: rahulik alus, kaksiku kihid peal */
+  --m-land:#1A1E3A;--m-wood:#1C3534;--m-wet:#20304A;--m-built:#2A2E52;--m-water:#2B4C78;--m-river:#4C7FBF;
+  --m-road:#A9A6C2;--m-road2:#4A4F7E;--m-case:#13152B;--m-major:#D9B45C;--m-rail:#B3B1C9;--m-border:#5D5A88;
 }
 /* Hele teema: samad rollid, tumedamad toonid (kontrast ≥ 4,5:1 tekstil, ≥ 3:1 märkidel; valideeritud dataviz-skriptiga) */
 :root[data-theme="light"]{
@@ -30,6 +33,8 @@
   --m-tax:#9A7400;--c-staff:#A8467A;
   --ref:#6B6C99;--focus:#B98600;--link:#0E7C72;
   --bgimg:none;
+  --m-land:#F3F0E6;--m-wood:#D7E5CC;--m-wet:#D8E5E6;--m-built:#E4DDD2;--m-water:#AFCDE8;--m-river:#7AA8D3;
+  --m-road:#FFFFFF;--m-road2:#CFC8B8;--m-case:#B5AC98;--m-major:#F4CF7A;--m-rail:#6E6B80;--m-border:#A39C8A;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:150px}
@@ -156,6 +161,32 @@ details.more>summary::-webkit-details-marker{display:none}
 details.more>summary::before{content:"◆";font-size:9px;transition:transform .15s}
 details.more[open]>summary::before{transform:rotate(45deg)}
 details.more>.in{display:flex;flex-direction:column;gap:var(--sp2);margin-top:var(--sp2)}
+
+/* kaart (atlas) */
+.atl{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:var(--sp4);align-items:start}
+@media (max-width:980px){.atl{grid-template-columns:1fr}}
+.mapbox{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--m-land);touch-action:none;cursor:grab;user-select:none}
+.mapbox.drag{cursor:grabbing}
+.mapbox svg{display:block;width:100%;height:auto}
+.mapbox text{font-family:var(--f-body)}
+.m-lab{fill:var(--ink);paint-order:stroke;stroke:var(--m-land);stroke-width:3.5px;stroke-linejoin:round}
+.m-kyla{fill:var(--mut);font-size:11px;font-style:italic;paint-order:stroke;stroke:var(--m-land);stroke-width:3px;stroke-linejoin:round}
+.m-ref{font-family:var(--f-num)!important;font-size:10.5px;font-weight:600;fill:#1E1B2E}
+.mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
+.mapctl button{width:34px;height:34px;border:1px solid var(--line2);background:var(--surf);border-radius:7px;cursor:pointer;font-size:17px;line-height:1}
+.mapscale{position:absolute;left:10px;bottom:10px;font:11px var(--f-num);color:var(--ink);background:color-mix(in srgb,var(--surf) 85%,transparent);padding:3px 7px;border-radius:5px;display:flex;flex-direction:column;gap:2px}
+.mapscale span{display:block;height:5px;border:1.5px solid var(--ink);border-top:0}
+.maphint{position:absolute;inset:auto 0 44%;text-align:center;pointer-events:none;opacity:0;transition:opacity .2s;font-size:14px}
+.maphint.on{opacity:1}
+.maphint{color:var(--ink);text-shadow:0 0 6px var(--m-land),0 0 3px var(--m-land);font-weight:600}
+.maphint::before{content:"";}
+.atlside{position:sticky;top:160px;gap:var(--sp3)}
+.atlside .tabs button{font-size:12.5px;padding:5px 9px}
+.maplegend{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--mut)}
+.maplegend span{display:flex;gap:6px;align-items:center}
+.mapdl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0;font-size:13.5px}
+.mapdl dt{color:var(--mut)}.mapdl dd{margin:0;font-size:13.5px}
+@media (max-width:980px){.atlside{position:static}}
 
 /* graafikud */
 .chart{position:relative}
