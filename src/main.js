@@ -1,13 +1,14 @@
 /* Peatükid, marsruut (räsi #peatükk/jaotis), päis, käivitus. */
 const CHS = [
   { v: "ylevaade", t: "Ülevaade", q: "Mis seis on?", c: ["#FFD966", "#9A7400"], sub: [["lyhivaade", "Lühivaade", secLyhivaade], ["kuidas", "Kuidas lugeda", secKuidas]] },
+  { v: "kaart", t: "Kaart", q: "Kus asulad, koolid ja planeeringud asuvad?", c: ["#B9C45A", "#6B7A12"], sub: [["atlas", "Kaart", secKaart]] },
   { v: "eesmargid", t: "Eesmärgid", q: "Kas arengukava eesmärgid täituvad?", c: ["#FF8A5B", "#C2501F"], sub: [["seire", "Kõik eesmärgid", secSeire], ["siht", "Rahvaarvu siht", secSiht]] },
   { v: "rahvastik", t: "Rahvastik", q: "Kuidas rahvastik muutub?", c: ["#FF8FA3", "#C23B5A"], sub: [["rahvaarv", "Rahvaarv", secRahvaarv], ["vanus", "Vanuserühmad", secVanus], ["asulad", "Asulad", secAsulad]] },
   { v: "teenused", t: "Teenused", q: "Kas lasteaia- ja koolikohti jätkub?", c: ["#8FD0FF", "#1F6FB2"], sub: [["kohad", "Nõudlus ja kohad", secKohad], ["invest", "Investeering ja võlg", secInvest]] },
-  { v: "planeeringud", t: "Planeeringud", q: "Mida planeeringud ja arendused muudavad?", c: ["#E08A3C", "#A85A14"], sub: [["dp", "Menetluses planeeringud", secDp], ["arendus", "Arenduse kalkulaator", secArendus], ["kaart", "Kaart", secKaart]] },
+  { v: "planeeringud", t: "Planeeringud", q: "Mida planeeringud ja arendused muudavad?", c: ["#E08A3C", "#A85A14"], sub: [["dp", "Menetluses planeeringud", secDp], ["arendus", "Arenduse kalkulaator", secArendus]] },
   { v: "stsenaariumid", t: "Stsenaariumid", q: "Mis juhtub, kui …?", c: ["#BE8CF5", "#8A4FD1"], sub: [["toolaud", "Töölaud", secToolaud]] },
   { v: "otsused", t: "Otsused", q: "Mida otsus muudab?", c: ["#F3E2A6", "#7A6A1E"], sub: [["eelhinnang", "Mõju eelhinnang", secEelhinnang]] },
-  { v: "liikuvus", t: "Liikuvus", q: "Kuidas elanikud liiguvad?", c: ["#B9C45A", "#6B7A12"], sub: [["too", "Töökohad", secToo], ["yt", "Ühistransport", secYt], ["koolitee", "Koolitee", secKoolitee]] },
+  { v: "liikuvus", t: "Liikuvus", q: "Kuidas elanikud liiguvad?", c: ["#9FB8F5", "#3E5BA9"], sub: [["too", "Töökohad", secToo], ["yt", "Ühistransport", secYt], ["koolitee", "Koolitee", secKoolitee]] },
   { v: "kysi", t: "Küsi kaksikult", q: "Mida tahad teada?", c: ["#7FD8D0", "#0E7C72"], sub: [["kysi", "Küsimus", secKysi]] },
   { v: "andmed", t: "Arendajale", q: "Kuidas mudel töötab ja kui täpne see on?", dev: true, c: ["#A3A4CC", "#5A5B8A"], sub: [["tapsus", "Täpsus", secTapsus], ["kasutus", "Lubadused ja kasutusjuhud", secKasutus], ["sonastik", "Andmesõnastik", secSonastik], ["mootor", "Mootor ja testid", secMootor], ["konf", "Konfiguratsioon", secKonf]] }
 ];

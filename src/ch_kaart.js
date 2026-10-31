@@ -1,19 +1,21 @@
 /* Kaart (atlas): OpenStreetMapi aluskiht (data/map.json) + kaksiku kihid. Suum, lohistamine, klaviatuur, valitud asula paneel. */
 const MAPL = { maakate: true, teed: true, kylad: true, asulad: true, yt: false, koolid: true, dp: true };
-const MAP = { data: null, loading: null, sel: null, view: null };
-const loadMap = () => MAP.loading || (MAP.loading = fetch("data/map.json").then(r => r.ok ? r.json() : null).catch(() => null).then(j => (MAP.data = j)));
+const MAP = { cache: {}, sel: null, view: null };
+const loadMap = id => MAP.cache[id] || (MAP.cache[id] = fetch("data/map/" + id + ".json").then(r => r.ok ? r.json() : null).catch(() => null));
 
 function secKaart(el) {
   const vid = isAgg(S.unit) ? "Kohila" : S.unit;
-  if (!D.geo.vald[vid]) { el.innerHTML = ttl("Kaart", "Kaart on Kohila ja Rae valla kohta", "h2") + `<p class="note">Vali ülal Kohila või Rae.</p>`; return; }
-  if (!MAP.done) { el.innerHTML = `<div class="loading">Laadin kaardikihte…</div>`; loadMap().then(() => { MAP.done = true; if (el.isConnected) secKaart(el); }); return; }
-  const M = MAP.data && MAP.data.vald[vid];
-  const P = D.geo.place.filter(p => p.v === vid), I = D.geo.inst.filter(x => x.v === vid), T = new Map(D.transit.rows.filter(r => r[1] === vid).map(r => [r[0], r]));
+  if (!MAP["got" + vid]) { el.innerHTML = `<div class="loading">Laadin kaardikihte…</div>`; loadMap(vid).then(j => { MAP["got" + vid] = true; MAP["m" + vid] = j; if (el.isConnected) secKaart(el); }); return; }
+  const M = MAP["m" + vid], G0 = D.geo.vald[vid];
+  if (!M && !G0) { el.innerHTML = ttl(esc(ctx.units[vid].name), "Selle valla kaardikihti veel ei ole", "h2") + `<p class="note"><span class="missing">puudub</span> · käivita GitHubis töövoog „Kaardi aluskiht”.</p>`; return; }
+  const MD = M || { attr: D.geo.attr };
+  const P0 = D.geo.place.filter(p => p.v === vid), P = P0.length || !M ? P0 : M.kylad.map(k => ({ n: asulaKey(k.n), ll: [k.p[1], k.p[0]] })), I = D.geo.inst.filter(x => x.v === vid), T = new Map(D.transit.rows.filter(r => r[1] === vid).map(r => [r[0], r]));
   const L = D.settlements[vid] ? E.settlementLayer(ctx, vid, proj(vid), 2036) : [], L26 = D.settlements[vid] ? E.settlementLayer(ctx, vid, proj(vid), 2026) : [];
   const setOf = n => { const i = L.findIndex(x => asulaKey(x.n) === n); return i < 0 ? null : { r: L[i], r26: L26[i] }; };
   const DP = dpOf(vid), weak = P.filter(p => T.get(p.n) && T.get(p.n)[3] < 10).length;
   if (MAP.sel && !P.find(p => p.n === MAP.sel)) MAP.sel = null;
-  el.innerHTML = `${ttl(`${esc(ctx.units[vid].name)} · asulad, koolid, ühistransport ja planeeringud`, `${weak} asulas ${P.length}-st on tööpäeval alla 10 bussi- või rongiväljumise`, "h2")}
+  const H2 = T.size ? `${weak} asulas ${P.length}-st on tööpäeval alla 10 bussi- või rongiväljumise` : `${P.length} asulat; suurimad 2036: ${P.map(p => ({ n: p.n, s: setOf(p.n) })).filter(x => x.s).sort((a, b) => b.s.r.pop - a.s.r.pop).slice(0, 3).map(x => esc(x.n) + " " + f0(x.s.r.pop)).join(", ")}`;
+  el.innerHTML = `${ttl(`${esc(ctx.units[vid].name)}${isAgg(S.unit) ? " (maakonna asemel)" : ""} · asulad, koolid, ühistransport ja planeeringud`, H2, "h2")}
   <div class="atl">
     <div class="mapbox" id="mapBox" tabindex="0" role="application" aria-label="${esc(ctx.units[vid].name)} kaart. Suumimiseks + ja −, liigutamiseks nooleklahvid, algvaade 0.">
       <svg id="mapSvg" aria-hidden="true"><g id="mBase"></g><g id="mTop"></g></svg>
@@ -33,13 +35,13 @@ function secKaart(el) {
       </div>
     </aside>
   </div>
-  ${M ? "" : `<div class="callout"><span class="st na">◇</span><span>Kaardi aluskiht (<code>data/map.json</code>) <span class="missing">puudub</span>; näitan lihtsustatud piiri.</span></div>`}
-  ${meta(esc((MAP.data && MAP.data.attr) || D.geo.attr) + (MAP.data ? " · kaardikiht " + esc(MAP.data.date) : "") + " · Transpordiameti GTFS " + esc(D.transit.date) + " · planeeringukontroll " + esc(D.dp.updated))}`;
+  ${M ? "" : `<div class="callout"><span class="st na">◇</span><span>Kaardi aluskiht <span class="missing">puudub</span>; näitan lihtsustatud piiri.</span></div>`}
+  ${meta(esc(MD.attr) + (M ? " · kaardikiht " + esc(M.date) : "") + " · Transpordiameti GTFS " + esc(D.transit.date) + " · planeeringukontroll " + esc(D.dp.updated))}`;
   $("#mapL").onclick = e => { const b = e.target.closest("button"); if (b) { MAPL[b.dataset.l] = !MAPL[b.dataset.l]; secKaart(el); } };
 
   /* ---------- projektsioon ---------- */
   const box = $("#mapBox"), svg = $("#mapSvg"), W = W_(box);
-  const outl = M ? M.outline.map(f => { const r = []; for (let i = 0; i < f.length; i += 2) r.push([f[i], f[i + 1]]); return r; }) : [D.geo.vald[vid].map(p => [p[1], p[0]])];
+  const outl = M ? M.outline.map(f => { const r = []; for (let i = 0; i < f.length; i += 2) r.push([f[i], f[i + 1]]); return r; }) : [G0.map(p => [p[1], p[0]])];
   const bb = M ? M.bbox : (a => [Math.min(...a.map(p => p[0])), Math.min(...a.map(p => p[1])), Math.max(...a.map(p => p[0])), Math.max(...a.map(p => p[1]))])(outl[0]);
   const ol = outl.flat(), v0 = [Math.min(...ol.map(p => p[0])), Math.min(...ol.map(p => p[1])), Math.max(...ol.map(p => p[0])), Math.max(...ol.map(p => p[1]))];
   const kc = Math.cos((v0[1] + v0[3]) / 2 * Math.PI / 180), Hmax = Math.min(680, Math.max(360, W * (W < 600 ? 1.15 : .72)));
@@ -84,8 +86,6 @@ function secKaart(el) {
     /* jaamad ja teenumbrid */
     if (M && MAPL.teed) {
       ST.forEach(s => { const x = sx(X(s.p[0])), y = sy(Y(s.p[1])); if (x < 0 || x > W || y < 0 || y > H) return; t += `<circle cx="${x}" cy="${y}" r="4.5" fill="var(--m-land)" stroke="var(--ink)" stroke-width="2" data-tip="${esc("<b>" + esc(s.n) + "</b><br>raudteejaam")}"/>`; boxes.push([x - 5, y - 5, 10, 10]); if (view.k >= 2.5) { const w = s.n.length * 6.3; if (free(x - w / 2, y + 7, w, 13)) labs += `<text x="${x}" y="${y + 18}" text-anchor="middle" class="m-kyla" style="font-style:normal;font-weight:600">${esc(s.n)}</text>`; } });
-      const seen = new Set(); REFS.forEach(r => { const x = sx(X(r.p[0])), y = sy(Y(r.p[1])), key = r.r + Math.round(x / 140) + "," + Math.round(y / 140); if (seen.has(key)) return; const w = 8 + r.r.length * 7; if (!free(x - w / 2, y - 8, w, 16)) return; seen.add(key);
-        t += `<rect x="${x - w / 2}" y="${y - 8}" width="${w}" height="16" rx="3" fill="var(--m-major)" stroke="var(--m-case)"/><text x="${x}" y="${y + 4}" text-anchor="middle" class="m-ref">${esc(r.r)}</text>`; });
     }
     /* asulad */
     const items = P.map(p => { const s = setOf(p.n), tr = T.get(p.n), pp = s ? s.r.pop : null; return { p, s, tr, pp, x: sx(X(p.ll[1])), y: sy(Y(p.ll[0])) }; }).sort((a, b) => (b.pp || 0) - (a.pp || 0));
@@ -102,6 +102,10 @@ function secKaart(el) {
     items.forEach(o => { if (o.r == null) return; const big = o.pp && o.pp > mxP * .3, fs = big ? 13.5 : o.pp && o.pp > mxP * .08 ? 12 : 11, w = o.p.n.length * fs * .56, h = fs + 2, cls = o.pp ? "m-lab" : "m-kyla";
       const cand = [[o.x + o.r + 4, o.y - h / 2, "start"], [o.x - o.r - 4 - w, o.y - h / 2, "start"], [o.x - w / 2, o.y - o.r - h - 2, "start"], [o.x - w / 2, o.y + o.r + 2, "start"]];
       const c = cand.find(([x, y]) => free(x, y, w, h)); if (c) labs += `<text x="${c[0]}" y="${c[1] + fs - 1}" class="${cls}" style="font-size:${fs}px;${big ? "font-weight:700" : ""}${cls === "m-kyla" ? ";font-style:normal" : ""}">${esc(o.p.n)}</text>`; });
+    if (M && MAPL.teed) {
+      const seen = new Set(); REFS.forEach(r => { const x = sx(X(r.p[0])), y = sy(Y(r.p[1])), key = r.r + Math.round(x / 140) + "," + Math.round(y / 140); if (seen.has(key)) return; const w = 8 + r.r.length * 7; if (!free(x - w / 2, y - 8, w, 16)) return; seen.add(key);
+        t += `<rect x="${x - w / 2}" y="${y - 8}" width="${w}" height="16" rx="3" fill="var(--m-major)" stroke="var(--m-case)"/><text x="${x}" y="${y + 4}" text-anchor="middle" class="m-ref">${esc(r.r)}</text>`; });
+    }
     if (M && MAPL.kylad && (view.k >= 1.4 || W > 1000)) M.kylad.forEach(k => { if (P.find(p => p.n === asulaKey(k.n))) return; const x = sx(X(k.p[0])), y = sy(Y(k.p[1])), w = k.n.length * 6.2; if (free(x - w / 2, y - 7, w, 13)) labs += `<text x="${x}" y="${y + 4}" text-anchor="middle" class="m-kyla">${esc(asulaKey(k.n))}</text>`; });
     $("#mTop").innerHTML = labs + t;
     /* mõõtkava */
