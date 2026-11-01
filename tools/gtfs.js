@@ -269,8 +269,9 @@ function finishAgg(a, mode, isCentre) {
   if (isCentre) { o.keskus = null; o.kool = null; }
   else {
     o.keskus = finishConn(a.kesk);
-    let arrBy = null; for (const c of a.kesk.values()) if (c.arr <= 8 * 3600 + 15 * 60 && (arrBy == null || c.arr < arrBy)) arrBy = c.arr;
-    o.kool = { arrBy0815: fmt(arrBy), ret: a.ret.size };
+    let arrBy = null, arrFirst = null; const lim = 8 * 3600 + 15 * 60;
+    for (const c of a.kesk.values()) if (c.arr <= lim) { if (arrBy == null || c.arr > arrBy) arrBy = c.arr; if (arrFirst == null || c.arr < arrFirst) arrFirst = c.arr; }
+    o.kool = { arrBy0815: fmt(arrBy), arrFirst: fmt(arrFirst), ret: a.ret.size };
   }
   return o;
 }
@@ -355,7 +356,7 @@ function DOC(muni, centre) {
     "first/last = esimene/viimane väljumine (HH:MM); gapMax = suurim vahe minutites järjestikuste väljumiste vahel kell 05:00–23:00 (null, kui väljumisi alla kahe). am = reisid 06:00–08:59, pm = 15:00–18:59. " +
     "tln/keskus = otseühendused (sama reis, hilisem peatus, ümberistumiseta): trips = reiside arv, firstArr = varaseim saabumine, minMin = lühim sõiduaeg minutites asula viimasest väljumispeatusest esimese sihtpeatuseni, am7_9 = saabumised 07:00–08:59. " +
     `Vallakeskus = ${centre}; keskusasula enda keskus/kool = null. Valla tasemel arvestatakse keskusesse sõitu keskusest väljaspool asuvatest peatustest. ` +
-    "kool.arrBy0815 = varaseim otsesaabumine keskusesse kuni 08:15 (null, kui sellist ei ole); kool.ret = reisid keskusest 13:00–17:59, mis peatuvad hiljem selles asulas. " +
+    "kool.arrBy0815 = hiliseim otsesaabumine keskusesse kell 08:15 või varem, kool.arrFirst = varaseim selline saabumine (null, kui sellist ei ole); kool.ret = reisid keskusest 13:00–17:59, mis peatuvad hiljem selles asulas. " +
     "stops = ainult peatused, kus perioodil peatub mõni reis. Peatuse päevaandmetes on h ainult bussipeatusel ja hr ainult rongipeatusel (vt stops[].modes). Päeval puuduv peatus days.stop all = sel päeval väljumisi ei ole. Kõik asulad on igas päevas olemas; 0 tähendab, et sõiduplaanis sel päeval väljumisi ei ole. Puuduv/teadmata väärtus = null. " +
     "Teenus kuupäeval D: calendar nädalapäev ja start≤D≤end, siis calendar_dates 1 lisab, 2 eemaldab. Asula = OSM asustusüksus, võti ilma sõnadeta alev/alevik/küla/linn (nt Hageri alevik ja Hageri küla → Hageri). " +
     "Kommertsliinid ja tellimusvedu võivad puududa; GTFS ei näita sõitjate arvu, täituvust ega hilinemisi.";

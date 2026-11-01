@@ -37,7 +37,7 @@ function eq(name, got, exp) {
   eq("(2) Aküla dep/trips", [D(MON).asula["Aküla"].dep, D(MON).asula["Aküla"].trips], [2, 1]);
   eq("(2) tunnijaotus reisi esimese väljumise järgi", D(MON).asula["Aküla"].h[7], 1);
   eq("(2) Tallinna otseühendus", D(MON).asula["Aküla"].tln, { trips: 1, firstArr: "08:00", minMin: 55, am7_9: 1 });
-  eq("(2) keskus ja kool", [D(MON).asula["Aküla"].keskus.trips, D(MON).asula["Aküla"].kool], [1, { arrBy0815: "07:20", ret: 1 }]);
+  eq("(2) keskus ja kool", [D(MON).asula["Aküla"].keskus.trips, D(MON).asula["Aküla"].kool], [1, { arrBy0815: "07:20", arrFirst: "07:20", ret: 1 }]);
 
   // (3) reisi viimane peatus ei ole väljumine
   eq("(3) A1 väljumisi E (t2 lõpeb A1-s)", D(MON).stop["mini:A1"].dep, 1);
@@ -49,13 +49,14 @@ function eq(name, got, exp) {
 
   // (5) otseühenduse puudumine
   eq("(5) Bküla → Tallinn puudub", D(MON).asula["Bküla"].tln, { trips: 0, firstArr: null, minMin: null, am7_9: 0 });
-  eq("(5) Bküla kool: keskusse enne 08:15 ei jõua", D(MON).asula["Bküla"].kool, { arrBy0815: null, ret: 0 });
+  eq("(5) Bküla kool: keskusse enne 08:15 ei jõua", D(MON).asula["Bküla"].kool, { arrBy0815: null, arrFirst: null, ret: 0 });
   eq("(5) gapMax ühe väljumisega = null", D(MON).asula["Bküla"].gapMax, null);
+  eq("kool: hiliseim saabumine ≤08:15 ja varaseim", D(MON).asula["Cküla"].kool, { arrBy0815: "08:10", arrFirst: "06:20", ret: 0 });
   eq("keskusasula enda keskus/kool null", [D(MON).asula["Kesk"].keskus, D(MON).asula["Kesk"].kool], [null, null]);
 
   // vald, struktuur
-  eq("vald T: unikaalsed reisid", [D(TUE).vald.trips, D(TUE).vald.dep], [4, 6]);
-  eq("Tallinna ja kasutamata peatus ei ole valla peatuste hulgas", o.stops.map((s) => s.id).sort(), ["mini:A1", "mini:A2", "mini:B1", "mini:K1"]);
+  eq("vald T: unikaalsed reisid", [D(TUE).vald.trips, D(TUE).vald.dep], [7, 9]);
+  eq("Tallinna ja kasutamata peatus ei ole valla peatuste hulgas", o.stops.map((s) => s.id).sort(), ["mini:A1", "mini:A2", "mini:B1", "mini:C1", "mini:K1"]);
   eq("bussipeatusel pole hr-i", [D(MON).stop["mini:B1"].hr, D(MON).stop["mini:B1"].h.length], [undefined, 24]);
   eq("liiniliigid", [o.routes["mini:R3"].m, o.routes["mini:R1"].m, o.routes["mini:R1"].op], ["rail", "bus", "Testivedaja"]);
   eq("kuju lõigatud ja lihtsustatud", [o.routeShapes["mini:R1"], o.shapes["mini:S1"].length < 10], [["mini:S1"], true]);

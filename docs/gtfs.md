@@ -12,7 +12,7 @@ Fail `data/transit/<vald>.json` (Kohila, Rae, Rapla, Marjamaa, Kehtna) tehakse t
 - **Sihtkohaühendus (`tln`, `keskus`)** – otseühendus: sama reis peatub hiljem sihtkohas (ümberistumisi ei arvestata). `minMin` = sõiduaeg asula viimasest väljumispeatusest esimese sihtpeatuseni; `firstArr` = varaseim saabumine; `am7_9` = saabumised 07:00–08:59.
   - Tallinna kesklinn = peatused kuni 2,5 km Vabaduse väljakust (59.4337, 24.7449).
   - Vallakeskus = OSM-i asustusüksuse polügoon: Kohila alev, Jüri alevik, Rapla linn, Märjamaa alev, Kehtna alevik. Keskusasula enda `keskus`/`kool` = null.
-- **Kool** – `arrBy0815` = varaseim otsesaabumine keskusesse kuni 08:15 (null, kui ei ole); `ret` = reisid, mis väljuvad keskusest 13:00–17:59 ja peatuvad hiljem asulas.
+- **Kool** – `arrBy0815` = hiliseim otsesaabumine keskusesse kell 08:15 või varem, `arrFirst` = varaseim selline saabumine (null, kui ei ole); `ret` = reisid, mis väljuvad keskusest 13:00–17:59 ja peatuvad hiljem asulas.
 - `gapMax` = suurim vahe (min) järjestikuste väljumiste vahel 05:00–23:00; alla kahe väljumise korral null.
 - `stops` sisaldab ainult peatusi, kus perioodil peatub mõni reis (voogudes on kogu riiklik peatuseregister). Sama `stop_id` võib olla mitmes voos; id on kujul `voog:stop_id`. Peatuse päevaandmetes on `h` ainult bussipeatusel ja `hr` ainult rongipeatusel (`stops[].modes`).
 - 0 tähendab, et sõiduplaanis sel päeval väljumisi ei ole; null tähendab, et väärtust ei saa määrata (nt ühendus puudub). Väärtusi ei tuletata ega hinnata.

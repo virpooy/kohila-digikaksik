@@ -3,3 +3,6 @@ R1,WK,t1,S1
 R1,WK,t2,
 R2,WK,t3,
 R3,EXTRA,t4,
+R2,WK,t5,
+R2,WK,t6,
+R2,WK,t7,
