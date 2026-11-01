@@ -80,7 +80,7 @@ const near = (a, b, t = 1e-9) => Math.abs(a - b) <= t * Math.max(1, Math.abs(a),
 {
   const rows = [{ y: 2026, la: 400 }, { y: 2030, la: 450 }, { y: 2036, la: 420 }], r = L.eduReserve(rows, 470, "la");
   ok(r.year === 2030 && near(r.util, 450 / 470) && r.minFree === 20 && near(r.growthToShort, 470 / 450 - 1), "reserv: suurim täituvus, aasta, väikseim vaba kohtade arv ja kasvuruum");
-  ok(L.capState(r, null) === "warn", "reserv: üle 95% täituvus ei ole „korras”");
+  ok(L.capState(r, null) === "warn", "reserv: vähemalt 90% täituvus ei ole „korras”");
   ok(L.eduReserve(rows, null, "la").na, "reserv: puuduv kohtade arv ei ole 0");
 }
 
