@@ -67,7 +67,7 @@ const Logic = (function () {
   /** commuteRows(C, id): mittekattuvad osad koos nimetajaga; ainult Tallinn ja Tartu on kaardil paigutatavad. */
   function commuteRows(C, id) {
     const p = C.parts[id], t = C.raw[id].kokku;
-    const L = [["sama", "samas omavalitsuses", null], ["tallinn", "Tallinnas", "tallinn"], ["tartu", "Tartus", "tartu"], ["muuKovMk", C.mk[id] === "Harju" ? "mujal Harjumaal (v.a Tallinn)" : "mujal Raplamaal", null], ["muuMk", "muus maakonnas (v.a Tallinn, Tartu)", null], ["valismaa", "välismaal", null], ["teadmata", "teadmata", null]];
+    const L = [["sama", "samas omavalitsuses", null], ["tallinn", "Tallinnas", "tallinn"], ["tartu", "Tartus", "tartu"], ["muuKovMk", C.mk[id] === "Harju" ? "mujal Harjumaal (v.a Tallinn)" : "mujal Raplamaal", null], ["muuMk", "muus maakonnas¹", null], ["valismaa", "välismaal", null], ["teadmata", "teadmata", null]];
     return { total: t, rows: L.map(([k, n, loc]) => ({ k, n, v: p[k], share: p[k] / t, loc })), resid: p.jaak };
   }
 
