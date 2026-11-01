@@ -32,7 +32,7 @@ function srcDialog(k) {
 /* andmefailidest tulevad kuupäevad */
 const SRCDYN = {
   dp: () => ({ fetched: D.dp.updated }),
-  osm: () => { const m = Object.values(MAP.cache || {}).length && MAP.mKohila; return m ? { fetched: m.date, period: "OSM seis " + m.date } : {}; },
+  osm: () => MAP.osmDate ? { fetched: fmtD(MAP.osmDate), period: "OpenStreetMapi seis " + fmtD(MAP.osmDate) } : {},
   gtfs: () => { const t = YT.cur; if (!t) return { period: "analüüsipäev " + fmtD(D.transit.date) + " (ühepäevane kokkuvõte)", fetched: "31.10.2026" }; const f = t.meta.feeds; return { period: "analüüsipäevad " + fmtD(t.meta.dates[0]) + "–" + fmtD(t.meta.dates[t.meta.dates.length - 1]) + "; kehtivus " + f.map(x => x.name + " " + fmtD(x.validFrom) + "–" + fmtD(x.validTo)).join(", "), fetched: f.map(x => x.name + " " + fmtD(String(x.fetched).slice(0, 10))).join(", ") }; }
 };
 const fmtD = s => { const m = String(s || "").match(/^(\d{4})-?(\d{2})-?(\d{2})/); return m ? `${m[3]}.${m[2]}.${m[1]}` : String(s || "puudub"); };

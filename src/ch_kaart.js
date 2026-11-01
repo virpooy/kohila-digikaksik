@@ -27,6 +27,7 @@ async function mapView(el, mode) {
   const fail = got.map((g, i) => g.ok ? null : need[i]).filter(Boolean);
   const main = got[0];
   if (!main.ok && mode !== "too") { el.innerHTML = `${ttl("Kaart", "Kaardiandmeid ei õnnestunud laadida", "h2")}<div class="err">${esc(main.err)}</div><button type="button" class="btn" id="mapRetry">Proovi uuesti</button>`; $("#mapRetry").onclick = () => mapView(el, mode); return; }
+  if (main.ok && main.d.date) MAP.osmDate = main.d.date;
   const ctxM = { el, mode, vid, M: main.ok ? main.d : null, T: mode !== "too" && got[1] && got[1].ok ? got[1].d : null, R: mode === "too" && main.ok ? main.d : null, fail };
   if (mode === "yt" || mode === "ligi" || mode === "piirkonnad") { YT.cur = ctxM.T; if (ctxM.T && (!YT.date || !ctxM.T.days[YT.date])) YT.date = ctxM.T.meta.dates.find(d => ctxM.T.meta.dayInfo[d].wd === "T") || ctxM.T.meta.dates[0]; }
   try { buildMap(ctxM); } catch (e) { console.error(e); el.innerHTML = `<div class="err">Kaardi joonistamine ebaõnnestus: ${esc(e.message)}</div><button type="button" class="btn" id="mapRetry">Proovi uuesti</button>`; $("#mapRetry").onclick = () => mapView(el, mode); }
