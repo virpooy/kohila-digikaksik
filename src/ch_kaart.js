@@ -105,8 +105,8 @@ function buildMap(c) {
       </div>
     </div>
     <aside class="atlside">
-      <details class="pnl" open><summary>Kihid ja filtrid</summary><div class="in" id="mapCtl"></div></details>
-      <details class="pnl" open><summary>Valitud objekt</summary><div class="in" id="mapInfo"></div></details>
+      <details class="pnl" ${innerWidth < 900 ? "" : "open"}><summary>Kihid, filtrid ja legend</summary><div class="in" id="mapCtl"></div></details>
+      <details class="pnl" id="selPnl" ${innerWidth < 900 && !MAP.sel ? "" : "open"}><summary>Valitud objekt</summary><div class="in" id="mapInfo"></div></details>
     </aside>
   </div>
   <div class="g2 maplink"><div class="inst"><span class="kick" id="mapChartT"></span><div class="chart" id="mapChart"></div><div id="mapChartL"></div></div><div class="inst" id="mapTbl"></div></div>
@@ -121,7 +121,7 @@ function buildMap(c) {
     outl = R ? c.kovOf(vid).rings.map(flatPts) : []; v0 = [23.6, 58.2, 27.0, 59.55]; }
   else { outl = M ? M.outline.map(flatPts) : [D.geo.vald[vid].map(p => [p[1], p[0]])]; const ol = outl.flat(); v0 = [Math.min(...ol.map(p => p[0])), Math.min(...ol.map(p => p[1])), Math.max(...ol.map(p => p[0])), Math.max(...ol.map(p => p[1]))]; }
   const kc = Math.cos((v0[1] + v0[3]) / 2 * Math.PI / 180), Hmax = Math.min(680, Math.max(380, W * (W < 600 ? 1.2 : .7)));
-  const pad = 16, S0 = Math.min((W - 2 * pad) / ((v0[2] - v0[0]) * kc), (Hmax - 2 * pad) / (v0[3] - v0[1])), H = Math.round(Math.min(Hmax, (v0[3] - v0[1]) * S0 + 2 * pad));
+  const pad = 16, S0 = Math.min((W - 2 * pad) / ((v0[2] - v0[0]) * kc), (Hmax - 2 * pad) / (v0[3] - v0[1])), H = W < 600 ? Math.round(Math.min(Hmax, Math.max(340, W * 1.05))) : Math.round(Math.min(Hmax, (v0[3] - v0[1]) * S0 + 2 * pad));
   const cx = (v0[0] + v0[2]) / 2, cy = (v0[1] + v0[3]) / 2, X = lon => W / 2 + (lon - cx) * kc * S0, Y_ = lat => H / 2 - (lat - cy) * S0;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H);
   const pth = (f, close) => { let s = ""; for (let i = 0; i < f.length; i += 2) s += (i ? "L" : "M") + X(f[i]).toFixed(1) + "," + Y_(f[i + 1]).toFixed(1); return s + (close ? "Z" : ""); };
@@ -153,7 +153,7 @@ function buildMap(c) {
   const key = mode + vid + W; const view = MAP.view[key] || (MAP.view[key] = { k: 1, tx: 0, ty: 0 });
   const sx = x => x * view.k + view.tx, sy = y => y * view.k + view.ty, SX = lon => sx(X(lon)), SY = lat => sy(Y_(lat));
   const selIs = (kind, id) => MAP.sel && MAP.sel.kind === kind && MAP.sel.id === id;
-  const setSel = s => { MAP.sel = s ? { ...s, vid } : null; drawTop(); info(); linked(); };
+  const setSel = s => { MAP.sel = s ? { ...s, vid } : null; drawTop(); info(); linked(); if (s && $("#selPnl")) $("#selPnl").open = true; };
   c.api = { setSel };
 
   /* ---------- otsing ---------- */
@@ -181,13 +181,14 @@ function buildMap(c) {
       /* asula ringid: pindala ∝ väärtus */
       const I = IND[MAP.ind], arr = POP ? [...POP.m.values()].filter(o => !o.other) : [], mxS = Math.max(1, ...arr.map(o => mode === "ligi" ? o.popY : I.size(o)));
       const Rmax = Math.min(26, W / 30) * Math.min(1.8, Math.sqrt(view.k));
-      const col = o => { if (mode === "ligi") return ligCol(o); if (I.div) { const v = I.v(o); return v > 0 ? "var(--gain)" : v < 0 ? "var(--loss)" : "var(--ref)"; } if (I.seq) { const v = I.v(o); return v > .25 ? "var(--a-old)" : v > .18 ? "var(--warn)" : "var(--a-work)"; } return "var(--a-work)"; };
+      const col = (o, p) => { if (mode === "ligi") return ligCol(o, p); if (I.div) { const v = I.v(o); return v > 0 ? "var(--gain)" : v < 0 ? "var(--loss)" : "var(--ref)"; } if (I.seq) { const v = I.v(o); return v > .25 ? "var(--a-old)" : v > .18 ? "var(--warn)" : "var(--a-work)"; } return "var(--a-work)"; };
       const items = PL.map(p => { const o = POP && POP.m.get(p.n); return { p, o, x: SX(p.ll[1]), y: SY(p.ll[0]) }; }).sort((a, b) => ((b.o && b.o.popY) || 0) - ((a.o && a.o.popY) || 0));
       items.forEach(it => { const { p, o, x, y } = it; if (!vis(x, y)) return;
         const sv = o && !o.other ? (mode === "ligi" ? o.popY : I.size(o)) : null, r = sv != null && sv > 0 ? Math.max(3, Rmax * Math.sqrt(sv / mxS)) : 3.5; it.r = r;
         const val = o && !o.other ? (mode === "ligi" ? ligVal(p) : I.v(o)) : null, sel = selIs("asula", p.n);
         const tip = `<b>${esc(p.n)}</b><br>` + (o && !o.other ? (mode === "ligi" ? ligTip(p) : `${esc(I.n)}: <b>${I.pct ? pc(val) : (I.div ? sg(val) : f0(val))}</b>${I.pct ? "" : " " + I.u}${I.kind === "mudel" ? "<br><i>tuletatud valla prognoosist</i>" : ""}`) : "koondatud reale „Muud külad” (alla 200 elaniku 2021)") + "<br><i>klõpsa: üksikasjad</i>";
-        if (sv != null) t += `<circle cx="${x}" cy="${y}" r="${r}" fill="${col(o)}" fill-opacity=".38" stroke="${col(o)}" stroke-width="1.3" data-tip="${esc(tip)}" data-sel="asula|${esc(p.n)}" style="cursor:pointer"/>`;
+        if (mode === "ligi" && sv == null) { const cc = ligCol(null, p); t += `<circle cx="${x}" cy="${y}" r="5" fill="${cc}" fill-opacity=".7" stroke="${cc}" data-tip="${esc(`<b>${esc(p.n)}</b><br>` + ligTip(p))}" data-sel="asula|${esc(p.n)}" style="cursor:pointer"/>`; }
+        else if (sv != null) t += `<circle cx="${x}" cy="${y}" r="${r}" fill="${col(o, p)}" fill-opacity=".38" stroke="${col(o, p)}" stroke-width="1.3" data-tip="${esc(tip)}" data-sel="asula|${esc(p.n)}" style="cursor:pointer"/>`;
         else t += `<circle cx="${x}" cy="${y}" r="3.5" fill="var(--m-land)" stroke="var(--dim)" stroke-width="1.2" data-tip="${esc(tip)}" data-sel="asula|${esc(p.n)}" style="cursor:pointer"/>`;
         if (sel) hl += `<circle cx="${x}" cy="${y}" r="${r + 5}" fill="none" stroke="var(--focus)" stroke-width="3"/>`;
         boxes.push([x - r, y - r, 2 * r, 2 * r]); });
@@ -243,7 +244,7 @@ function buildMap(c) {
   function ligVal(p) { const a = ligNear(p), d = T && T.days[YT.date] && T.days[YT.date].asula[p.key || p.n];
     return MAP.lig === "kool" ? a.k && a.k.d / 1000 : MAP.lig === "lasteaed" ? a.l && a.l.d / 1000 : MAP.lig === "peatus" ? a.s && a.s.d / 1000 : MAP.lig === "tln" ? d && d.tln && d.tln.minMin : d && d.kool && d.kool.arrBy0815; }
   const ligFmt = v => v == null ? "puudub" : MAP.lig === "kool815" ? v : MAP.lig === "tln" ? v + " min" : v.toFixed(1).replace(".", ",") + " km";
-  function ligCol(o) { const p = PL.find(q => q.n === asulaKey(o.n)); if (!p) return "var(--ref)"; const v = ligVal(p); if (v == null) return "var(--dim)";
+  function ligCol(o, pp) { const p = pp || PL.find(q => q.n === asulaKey(o.n)); if (!p) return "var(--ref)"; const v = ligVal(p); if (v == null) return "var(--dim)";
     if (MAP.lig === "kool815") return "var(--ok)"; const lim = MAP.lig === "tln" ? [45, 70] : MAP.lig === "peatus" ? [1, 2.5] : [3, 7]; return v <= lim[0] ? "var(--ok)" : v <= lim[1] ? "var(--warn)" : "var(--crit)"; }
   const ligTip = p => `${esc(LIG[MAP.lig][0])}: <b>${ligFmt(ligVal(p))}</b>${MAP.lig === "kool815" && ligVal(p) == null ? " (otseühendust ei ole)" : ""}<br><i>${/km/.test(LIG[MAP.lig][1]) ? "linnulend asula keskpunktist" : "sõiduplaan " + fmtD(YT.date) + ", otseühendus"}</i>`;
 

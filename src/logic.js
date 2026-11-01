@@ -39,7 +39,7 @@ const Logic = (function () {
   function capState(res, firstShort) {
     if (res.na) return "na";
     if (firstShort) return firstShort <= 2030 ? "crit" : "warn";
-    return res.util >= 0.95 ? "warn" : "ok";
+    return res.util >= 0.9 ? "warn" : "ok"; // ≥ 90%: reserv väike (kaksiku kokkulepe)
   }
 
   /* ---------- eelarve tundlikkus ---------- */

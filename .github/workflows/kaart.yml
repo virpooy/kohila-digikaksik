@@ -16,9 +16,11 @@ jobs:
         with: { node-version: 20 }
       - name: Lae kaardikihid
         run: |
-          node tools/osm_kaart.js ${{ inputs.vallad }} | tee kaart.txt
-          echo "::notice title=Kaart::$(tr '\n' ' ' < kaart.txt)"
+          set +e; node tools/osm_kaart.js ${{ inputs.vallad }} > kaart.txt 2>&1; rc=$?; set -e
+          echo "::notice title=Kaart::$(tr '\n' ' ' < kaart.txt | cut -c1-3500)"
+          echo "rc=$rc" >> $GITHUB_ENV
       - name: Salvesta
+        if: always()
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           if [ -z "$(git status --porcelain data/)" ]; then echo "Muudatusi ei ole"; exit 0; fi
@@ -26,5 +28,6 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           git add -A data/
           git commit -m "Kaardi aluskiht $(date +%Y-%m-%d)" -m "$(cat kaart.txt)"
-          git push
+          for i in 1 2 3 4; do git pull --rebase -q origin main && git push && break; sleep 10; done
           gh workflow run ci.yml --ref main
+          if [ "$rc" != "0" ]; then echo "::warning title=Kaart::osa kihte jäi uuendamata (vt teadet)"; fi

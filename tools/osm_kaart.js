@@ -128,12 +128,16 @@ async function region() {
     (t.admin_level === "6" ? out.mk : out.kov).push({ n: t.name, ehak: t["ref:ehak"] || t["EHAK:code"] || null, p: [r5(lp[0]), r5(lp[1])], rings: big.filter(r => ringArea(r, k) > 2e6).map(r => flat(dp(r, 300, k))) }); }
   const f = path.join(__dirname, "..", "data", "map", "region.json"); fs.writeFileSync(f, JSON.stringify(out)); log(`data/map/region.json maakondi ${out.mk.length}, omavalitsusi ${out.kov.length}, ${Math.round(fs.statSync(f).size / 1024)} kB`);
 }
-if (process.argv[2] === "region") { fs.mkdirSync(path.join(__dirname, "..", "data", "map"), { recursive: true }); region().catch(e => { console.log("viga:", e.message); process.exit(1); }); } else
+if (process.argv[2] === "region-only") { fs.mkdirSync(path.join(__dirname, "..", "data", "map"), { recursive: true }); region().catch(e => { console.log("viga:", e.message); process.exit(1); }); } else
 (async () => {
   const dir = path.join(__dirname, "..", "data", "map"); fs.mkdirSync(dir, { recursive: true });
-  for (const [id, name] of VALLAD) {
+  const ids = VALLAD.filter(([id]) => id !== "region"), fails = [];
+  if (!process.argv[2] || /region/.test(process.argv[2])) { try { await region(); } catch (e) { fails.push("region: " + e.message); log("viga region:", e.message); } }
+  for (const [id, name] of ids) { try {
     const res = { _doc: "Kaardi aluskiht OpenStreetMapist (tools/osm_kaart.js). Koordinaadid [lon,lat,lon,lat,…], 5 komakohta, lihtsustatud. Teeklassid: 1 põhimaantee, 2 tugimaantee, 3 kõrvalmaantee, 4 ühendustee, 5 kohalik tänav/tee.", attr: "© OpenStreetMapi kaastöötajad (ODbL)", date: new Date().toISOString().slice(0, 10), ...(await vald(id, name)) };
     const f = path.join(dir, id + ".json"); fs.writeFileSync(f, JSON.stringify(res)); log(`data/map/${id}.json ${Math.round(fs.statSync(f).size / 1024)} kB`);
+    } catch (e) { fails.push(id + ": " + e.message); log("viga " + id + ":", e.message); }
     await new Promise(s => setTimeout(s, 3000));
   }
+  if (fails.length) { log("osaliselt ebaõnnestus: " + fails.join("; ")); process.exitCode = 2; }
 })().catch(e => { console.log("viga:", e.message); process.exit(1); });
