@@ -1,0 +1,155 @@
+{
+"_doc": "Rahva ja eluruumide loendus 2021 (31.12.2021), tabel RL21163: hõivatud elukoha omavalitsuse ja töökoha asukoha kategooria järgi, mehed ja naised kokku. Töökoha asukoht on ainult kategooriatena (sama KOV, muu KOV samas maakonnas, muu maakond, sh Tallinn ja Tartu, välismaa, teadmata); sihtomavalitsust ega sissetulevat pendelrännet tabelis ei ole. Elukoha-töökoha seos ei ole igapäevaste reiside arv.",
+"src": {
+"table": "RL21163",
+"url": "https://andmed.stat.ee/et/stat/rahvaloendus__rel2021__rahvastiku-majanduslik-aktiivsus__tooga-hoivatud/RL21163",
+"period": "31.12.2021",
+"fetched": "2026-11-01",
+"level": "elukoht: omavalitsus; töökoht: kategooria"
+},
+"loc": {
+"tallinn": {
+"n": "Tallinn",
+"ll": [
+59.4337,
+24.7449
+],
+"note": "punkt = Tallinna kesklinn (Vabaduse väljak); joon näitab seost, mitte marsruuti"
+},
+"tartu": {
+"n": "Tartu",
+"ll": [
+58.3806,
+26.7251
+],
+"note": "punkt = Tartu kesklinn (Raekoja plats)"
+}
+},
+"mk": {
+"Rae": "Harju",
+"Kohila": "Rapla",
+"Rapla": "Rapla",
+"Marjamaa": "Rapla",
+"Kehtna": "Rapla"
+},
+"raw": {
+"Rae": {
+"kokku": 11536,
+"eestis": 11495,
+"tallinn": 6930,
+"tartu": 106,
+"maakond": 11017,
+"sama": 3161,
+"muuKovMk": 7856,
+"muuMk": 478,
+"eestisTeadmata": 0,
+"valismaa": 35,
+"teadmata": 6
+},
+"Kehtna": {
+"kokku": 2474,
+"eestis": 2469,
+"tallinn": 494,
+"tartu": 25,
+"maakond": 1601,
+"sama": 983,
+"muuKovMk": 618,
+"muuMk": 868,
+"eestisTeadmata": 0,
+"valismaa": 5,
+"teadmata": 0
+},
+"Kohila": {
+"kokku": 3753,
+"eestis": 3745,
+"tallinn": 1605,
+"tartu": 27,
+"maakond": 1379,
+"sama": 1233,
+"muuKovMk": 146,
+"muuMk": 2365,
+"eestisTeadmata": 0,
+"valismaa": 8,
+"teadmata": 0
+},
+"Marjamaa": {
+"kokku": 3464,
+"eestis": 3457,
+"tallinn": 746,
+"tartu": 23,
+"maakond": 2051,
+"sama": 1805,
+"muuKovMk": 246,
+"muuMk": 1406,
+"eestisTeadmata": 0,
+"valismaa": 5,
+"teadmata": 3
+},
+"Rapla": {
+"kokku": 6418,
+"eestis": 6406,
+"tallinn": 1637,
+"tartu": 82,
+"maakond": 3860,
+"sama": 3284,
+"muuKovMk": 576,
+"muuMk": 2545,
+"eestisTeadmata": 0,
+"valismaa": 9,
+"teadmata": 3
+}
+},
+"parts": {
+"Rae": {
+"sama": 3161,
+"tallinn": 6930,
+"tartu": 106,
+"muuKovMk": 926,
+"muuMk": 372,
+"valismaa": 35,
+"teadmata": 6,
+"jaak": 0
+},
+"Kehtna": {
+"sama": 983,
+"tallinn": 494,
+"tartu": 25,
+"muuKovMk": 618,
+"muuMk": 349,
+"valismaa": 5,
+"teadmata": 0,
+"jaak": 0
+},
+"Kohila": {
+"sama": 1233,
+"tallinn": 1605,
+"tartu": 27,
+"muuKovMk": 146,
+"muuMk": 733,
+"valismaa": 8,
+"teadmata": 0,
+"jaak": 1
+},
+"Marjamaa": {
+"sama": 1805,
+"tallinn": 746,
+"tartu": 23,
+"muuKovMk": 246,
+"muuMk": 637,
+"valismaa": 5,
+"teadmata": 3,
+"jaak": -1
+},
+"Rapla": {
+"sama": 3284,
+"tallinn": 1637,
+"tartu": 82,
+"muuKovMk": 576,
+"muuMk": 826,
+"valismaa": 9,
+"teadmata": 3,
+"jaak": 1
+}
+},
+"partsDoc": "Lahutatud, mittekattuvad osad: sama KOV; Tallinn; Tartu; muu KOV samas maakonnas (v.a Tallinn); muu maakond (v.a Tallinn ja Tartu); välismaa; teadmata. jaak = kokku miinus osade summa (statistikaameti ümardus/avaldamispiirang)."
+}

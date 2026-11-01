@@ -80,17 +80,22 @@ async function vald(id, name) {
     way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street)(_link)?$"];
     way["railway"="rail"]; node["railway"~"^(station|halt)$"]; node["public_transport"="station"]["train"="yes"];
     way["waterway"~"^(river|canal|stream)$"]; way["natural"="water"]; relation["natural"="water"];
-    relation["boundary"="administrative"]["admin_level"~"^(8|9|10)$"];);out geom;`);
+    relation["boundary"="administrative"]["admin_level"~"^(8|9|10)$"];
+    nwr["amenity"~"^(school|kindergarten|college)$"];);out geom;`);
   log(`${name}: maakate`);
   const C = await op(`[out:json][timeout:300][bbox:${bbox}];(
     way["landuse"~"^(residential|industrial|commercial|retail)$"]; relation["landuse"~"^(residential|industrial|commercial|retail)$"];
     way["natural"="wood"]; way["landuse"="forest"]; relation["natural"="wood"]; relation["landuse"="forest"];
     way["natural"="wetland"]; relation["natural"="wetland"];);out geom;`);
 
-  const out = { name, bbox: [bb[1], bb[0], bb[3], bb[2]].map(r5), outline: outer.map(r => flat(dp(r, 15, k))), kylad: [], roads: [[], [], [], [], []], refs: [], rail: [], stations: [], river: [], stream: [], water: [], wood: [], wet: [], built: [] };
+  const out = { name, bbox: [bb[1], bb[0], bb[3], bb[2]].map(r5), outline: outer.map(r => flat(dp(r, 15, k))), kylad: [], inst: [], roads: [[], [], [], [], []], refs: [], rail: [], stations: [], river: [], stream: [], water: [], wood: [], wet: [], built: [] };
   const seenSt = new Set();
   for (const e of A.elements) {
     const t = e.tags || {};
+    if (t.amenity && /^(school|kindergarten|college)$/.test(t.amenity)) {
+      let ll = e.type === "node" ? [e.lon, e.lat] : null; if (!ll) { const g = e.type === "way" ? geomOf(e) : (e.members || []).flatMap(geomOf); if (g.length) ll = [g.reduce((a, q) => a + q[0], 0) / g.length, g.reduce((a, q) => a + q[1], 0) / g.length]; }
+      if (ll && t.name && inV(ll)) out.inst.push({ n: t.name, t: t.amenity === "kindergarten" ? "L" : t.amenity === "college" ? "V" : "K", p: [r5(ll[0]), r5(ll[1])], addr: [t["addr:street"] || t["addr:place"], t["addr:housenumber"]].filter(Boolean).join(" ") || null, osm: e.type + "/" + e.id, op: t["operator"] || null });
+      continue; }
     if (e.type === "node") { if (t.name && !seenSt.has(t.name)) { seenSt.add(t.name); out.stations.push({ n: t.name, p: [r5(e.lon), r5(e.lat)] }); } continue; }
     if (e.type === "way" && t.highway) { const c = RC[t.highway.replace("_link", "")]; const g = dp(geomOf(e), c <= 3 ? 6 : 10, k); if (g.length > 1) out.roads[c - 1].push(flat(g)); if (c <= 3 && t.ref && !t.highway.endsWith("_link")) out.refs.push({ r: t.ref, p: flat([g[Math.floor(g.length / 2)]]) }); continue; }
     if (e.type === "way" && t.railway === "rail") { const g = dp(geomOf(e), 6, k); if (g.length > 1) out.rail.push(flat(g)); continue; }
@@ -109,7 +114,7 @@ async function vald(id, name) {
     const kind = t.natural === "wetland" ? "wet" : (t.natural === "wood" || t.landuse === "forest") ? "wood" : "built", minA = kind === "built" ? 1500 : 20000, tol = kind === "built" ? 8 : 20;
     P2.outer.forEach(r => { if (ringArea(r, k) > minA) { const g = dp(r, tol, k); if (g.length > 3) out[kind].push(flat(g)); } });
   }
-  log(`${name}: külasid ${out.kylad.length}, teid ${out.roads.map(r => r.length).join("/")}, raudteed ${out.rail.length}, jaamu ${out.stations.length}, jõgesid ${out.river.length}, veekogusid ${out.water.length}, metsi ${out.wood.length}, märgalasid ${out.wet.length}, hoonestatud ${out.built.length}`);
+  log(`${name}: külasid ${out.kylad.length}, teid ${out.roads.map(r => r.length).join("/")}, raudteed ${out.rail.length}, jaamu ${out.stations.length}, haridusasutusi ${out.inst.length}, jõgesid ${out.river.length}, veekogusid ${out.water.length}, metsi ${out.wood.length}, märgalasid ${out.wet.length}, hoonestatud ${out.built.length}`);
   return out;
 }
 
