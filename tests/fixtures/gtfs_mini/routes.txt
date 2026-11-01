@@ -1,0 +1,4 @@
+route_id,agency_id,route_short_name,route_long_name,route_type
+R1,AG,1,"Aküla - Keskus - Tallinn",3
+R2,AG,2,Öine B-liin,3
+R3,AG,R,Rong,2
