@@ -283,7 +283,7 @@ function buildMunicipality(ctx, muni) {
   const bb = [b0[0] - 0.052, b0[1] - 0.027, b0[2] + 0.052, b0[3] + 0.027]; // ~3 km
   const stopsOut = new Map(), routes = {}, routeShapes = {}, shapes = {}, days = {};
   const asulaKeys = [...new Set(map.kylad.map((k) => asulaKey(k.n)))].sort((a, b) => a.localeCompare(b, "et"));
-  for (const f of feeds) for (const s of f.stops) if (s.muni === muni) stopsOut.set(s.id, { id: s.id, n: s.n, ll: [+s.lat.toFixed(6), +s.lon.toFixed(6)], asula: s.asula, modes: new Set() });
+  for (const f of feeds) for (const s of f.stops) if (s.muni === muni) stopsOut.set(s.id, { id: s.id, n: s.n, ll: [+s.lat.toFixed(5), +s.lon.toFixed(5)], asula: s.asula, modes: new Set() });
   const dupes = {};
   for (const date of dates) {
     const stopAgg = new Map(); const asula = new Map(asulaKeys.map((k) => [k, emptyAgg()])); const vald = emptyAgg();
@@ -299,11 +299,11 @@ function buildMunicipality(ctx, muni) {
       const gTid = f.name + ":" + tid, gRid = f.name + ":" + t.route;
       if (!routes[gRid]) routes[gRid] = { s: route.s, l: route.l, m: mode, op: route.op };
       if (t.shape) { const gS = f.name + ":" + t.shape; const rs = (routeShapes[gRid] = routeShapes[gRid] || []); if (!rs.includes(gS)) rs.push(gS); if (!(gS in shapes)) { const raw = f.shapes && f.shapes.get(t.shape); const c = raw && clipToBbox(raw, bb); shapes[gS] = c ? simplify(c, 10) : null; } }
-      // peatused
+      // peatused (liik märgitakse ka ainult saabumisega peatustele)
+      for (const r of rows) { const so = stopsOut.get(f.stops[r.si].id); if (so) so.modes.add(mode); }
       for (const e of evs) {
         let a = stopAgg.get(e.s.id); if (!a) stopAgg.set(e.s.id, (a = { dep: 0, h: new Array(24).fill(0), hr: new Array(24).fill(0), routes: new Set(), secs: [] }));
         a.dep++; (mode === "rail" ? a.hr : a.h)[hourOf(e.r.dep)]++; a.routes.add(gRid); a.secs.push(e.r.dep);
-        stopsOut.get(e.s.id).modes.add(mode);
       }
       // asulad + vald
       const groups = new Map();
@@ -328,14 +328,15 @@ function buildMunicipality(ctx, muni) {
     }
     const dStop = {};
     for (const [id, a] of stopAgg) {
-      const so = a.secs.slice().sort((p, q) => p - q);
-      dStop[id] = { dep: a.dep, h: a.h, hr: a.hr, routes: [...a.routes].sort(), first: fmt(so[0]), last: fmt(so[so.length - 1]), gapMax: gapMaxMin(a.secs) };
+      const so = a.secs.slice().sort((p, q) => p - q); const md = stopsOut.get(id).modes;
+      dStop[id] = { dep: a.dep, h: md.has("bus") ? a.h : undefined, hr: md.has("rail") ? a.hr : undefined, routes: [...a.routes].sort(), first: fmt(so[0]), last: fmt(so[so.length - 1]), gapMax: gapMaxMin(a.secs) };
     }
     const dAs = {}; for (const [k, a] of asula) dAs[k] = finishAgg(a, null, k === centreKey);
     days[date] = { stop: dStop, asula: dAs, vald: finishAgg(vald, null, false) };
   }
   ctx.dupes[muni] = dupes;
-  const stops = [...stopsOut.values()].map((s) => ({ ...s, modes: [...s.modes].sort() }));
+  // ainult peatused, kus perioodil peatub mõni reis (vood sisaldavad kogu riikliku peatuseregistri)
+  const stops = [...stopsOut.values()].filter((s) => s.modes.size).map((s) => ({ ...s, modes: [...s.modes].sort() }));
   for (const k of Object.keys(shapes)) if (shapes[k] == null) { delete shapes[k]; for (const r of Object.values(routeShapes)) { const i = r.indexOf(k); if (i >= 0) r.splice(i, 1); } }
   const dayInfo = {}; for (const d of dates) dayInfo[d] = { wd: WD[weekday(d)], exceptions: feeds.reduce((s, f) => s + (f.exByDate.get(compact(d)) || 0), 0) };
   return {
@@ -355,7 +356,7 @@ function DOC(muni, centre) {
     "tln/keskus = otseühendused (sama reis, hilisem peatus, ümberistumiseta): trips = reiside arv, firstArr = varaseim saabumine, minMin = lühim sõiduaeg minutites asula viimasest väljumispeatusest esimese sihtpeatuseni, am7_9 = saabumised 07:00–08:59. " +
     `Vallakeskus = ${centre}; keskusasula enda keskus/kool = null. Valla tasemel arvestatakse keskusesse sõitu keskusest väljaspool asuvatest peatustest. ` +
     "kool.arrBy0815 = varaseim otsesaabumine keskusesse kuni 08:15 (null, kui sellist ei ole); kool.ret = reisid keskusest 13:00–17:59, mis peatuvad hiljem selles asulas. " +
-    "Päeval puuduv peatus days.stop all = sel päeval väljumisi ei ole. Kõik asulad on igas päevas olemas; 0 tähendab, et sõiduplaanis sel päeval väljumisi ei ole. Puuduv/teadmata väärtus = null. " +
+    "stops = ainult peatused, kus perioodil peatub mõni reis. Peatuse päevaandmetes on h ainult bussipeatusel ja hr ainult rongipeatusel (vt stops[].modes). Päeval puuduv peatus days.stop all = sel päeval väljumisi ei ole. Kõik asulad on igas päevas olemas; 0 tähendab, et sõiduplaanis sel päeval väljumisi ei ole. Puuduv/teadmata väärtus = null. " +
     "Teenus kuupäeval D: calendar nädalapäev ja start≤D≤end, siis calendar_dates 1 lisab, 2 eemaldab. Asula = OSM asustusüksus, võti ilma sõnadeta alev/alevik/küla/linn (nt Hageri alevik ja Hageri küla → Hageri). " +
     "Kommertsliinid ja tellimusvedu võivad puududa; GTFS ei näita sõitjate arvu, täituvust ega hilinemisi.";
 }

@@ -55,7 +55,8 @@ function eq(name, got, exp) {
 
   // vald, struktuur
   eq("vald T: unikaalsed reisid", [D(TUE).vald.trips, D(TUE).vald.dep], [4, 6]);
-  eq("Tallinna peatus ei kuulu valla peatuste hulka", o.stops.map((s) => s.id).sort(), ["mini:A1", "mini:A2", "mini:B1", "mini:K1"]);
+  eq("Tallinna ja kasutamata peatus ei ole valla peatuste hulgas", o.stops.map((s) => s.id).sort(), ["mini:A1", "mini:A2", "mini:B1", "mini:K1"]);
+  eq("bussipeatusel pole hr-i", [D(MON).stop["mini:B1"].hr, D(MON).stop["mini:B1"].h.length], [undefined, 24]);
   eq("liiniliigid", [o.routes["mini:R3"].m, o.routes["mini:R1"].m, o.routes["mini:R1"].op], ["rail", "bus", "Testivedaja"]);
   eq("kuju lõigatud ja lihtsustatud", [o.routeShapes["mini:R1"], o.shapes["mini:S1"].length < 10], [["mini:S1"], true]);
   eq("CSV jutumärgid", G.parseCsvLine('a,"b, c",d'), ["a", "b, c", "d"]);
