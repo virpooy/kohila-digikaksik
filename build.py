@@ -2,7 +2,7 @@
 import pathlib
 
 R = pathlib.Path(__file__).parent
-APP = ["core.js", "ch_otsus.js", "ch_plan.js", "ch_kaart.js", "ch_dev.js", "main.js"]
+APP = ["core.js", "logic.js", "sources.js", "ch_otsus.js", "ch_plan.js", "ch_kaart.js", "ch_dev.js", "main.js"]
 
 shell = (R / "src/shell.html").read_text()
 for mark in ("/*__CSS__*/", "/*__ENGINE__*/", "/*__APP__*/"):

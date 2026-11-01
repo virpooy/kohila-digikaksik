@@ -14,15 +14,18 @@
 <header class="k9top">
   <div class="k9wrap row1">
     <div class="brand"><b>Kohila digikaksik</b><span id="brandSub">Laadin andmeid…</span></div>
+    <button type="button" class="iconbtn menubtn" id="menuBtn" aria-expanded="false" aria-controls="mnav">☰ Menüü</button>
     <nav class="k9nav" id="nav" aria-label="Peatükid"></nav>
     <div class="tools"><div class="seg" id="unitSeg" role="group" aria-label="Omavalitsus"></div><button class="iconbtn" id="themeBtn" type="button" aria-label="Vaheta heledat ja tumedat teemat">◐</button></div>
   </div>
+  <nav class="k9wrap mnav" id="mnav" aria-label="Menüü" hidden></nav>
   <div class="k9wrap row2" id="scenBar" hidden>
     <span class="kick">Stsenaarium</span>
+    <label for="yearSel">Prognoosiaasta <select id="yearSel"></select></label>
     <label for="migSel">Rändemuster <select id="migSel"></select></label>
     <label for="extraIn">Lisaränne <input type="number" id="extraIn" value="0" step="10"> in/a</label>
     <label for="fertIn">Sündimus <input type="range" id="fertIn" min="-20" max="20" step="5" value="0"> <output id="fertOut">±0%</output></label>
-    <span id="scenNote" class="dim"></span>
+    <span id="scenNote" class="dim">Aasta kehtib kaardil ja asulate vaates; teised joonised näitavad kogu perioodi 2026–2036.</span>
   </div>
 </header>
 <main id="main" class="k9wrap"><div class="loading">Laadin andmefaile ja kalibreerin mudelit…</div></main>

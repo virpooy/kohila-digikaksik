@@ -5,9 +5,8 @@
    igal arvul ühik, aasta ja päritolumärgis; puuduv = „puudub”. Kõik numbrid tulevad mootorist. */
 "use strict";
 const E = window.TwinEngine;
-const FILES = ["kov", "pop", "fin", "edu", "ext", "settlements", "dictionary", "usecases", "reference", "geo", "transit", "dp"];
-const DATA_DATE = "10.10.2026";
-const S = { unit: "Kohila", mig: "mean", extra: 0, fert: 0 };
+const FILES = ["kov", "pop", "fin", "edu", "ext", "settlements", "dictionary", "usecases", "reference", "geo", "transit", "dp", "commute"];
+const S = { unit: "Kohila", mig: "mean", extra: 0, fert: 0, year: 2036 };
 let D, ctx, TESTS;
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 
@@ -20,7 +19,7 @@ const eur = v => v == null ? "puudub" : E.eurT(v);
 const mln = v => (v / 1e6).toFixed(2).replace(".", ",") + " mln €";
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const rel = k => `<span class="k9rel ${k}">${k}</span>`;
+const rel = k => { const p = PROV[k] || PROV.hinnang; return `<span class="k9rel ${p[1]}" title="${esc(p[2])}">${p[0]} ${p[1]}</span>`; };
 const GLY = { ok: ["●", "korras", "--ok"], warn: ["▲", "piiri peal", "--warn"], crit: ["■", "kriitiline", "--crit"], na: ["◇", "puudub", "--dim"] };
 const stTag = (st, word) => `<span class="st ${st}">${GLY[st][0]} ${esc(word || GLY[st][1])}</span>`;
 
@@ -41,7 +40,7 @@ const LS = { get(k, d) { try { const v = localStorage.getItem("kaksik3:" + k); r
 /* ---------- plokkide abifunktsioonid ---------- */
 const ttl = (kick, h, tag = "h3") => `<div class="ttl"><span class="kick">${kick}</span><${tag}>${h}</${tag}></div>`;
 const more = (title, inner, open) => `<details class="more"${open ? " open" : ""}><summary>${title}</summary><div class="in">${inner}</div></details>`;
-const meta = (src, extra) => `<div class="meta"><span>${src} · andmed ${DATA_DATE} · mootor ${esc(E.VERSION.split(" ")[0])}</span>${extra || ""}</div>`;
+const meta = (src, extra) => `<div class="meta"><span class="srcs">Allikad: ${Array.isArray(src) ? src.map(srcBtn).join(" ") : src} <span class="dim">· mootor ${esc(E.VERSION.split(" ")[0])}</span></span>${extra || ""}</div>`;
 const legend = items => `<div class="legend">${items.map(i => `<span><i class="${i.k || ""}" style="--c:${i.c}"></i>${esc(i.n)}</span>`).join("")}</div>`;
 const table = (head, rows, numFrom = 1) => `<div class="tw"><table><thead><tr>${head.map((h, i) => `<th${i >= numFrom ? ' class="n"' : ""}>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr${r.cls ? ` class="${r.cls}"` : ""}>${(r.cells || r).map((c, i) => `<td${i >= numFrom ? ' class="n"' : ""}>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 const use = (ok, no, mind) => `<div class="k9use"><div style="--c:var(--ok)"><b>${GLY.ok[0]} Milleks sobib</b><ul>${ok.map(x => `<li>${x}</li>`).join("")}</ul></div><div style="--c:var(--crit)"><b>${GLY.crit[0]} Milleks ei sobi</b><ul>${no.map(x => `<li>${x}</li>`).join("")}</ul></div><div style="--c:var(--warn)"><b>${GLY.warn[0]} Pea meeles</b><ul>${mind.map(x => `<li>${x}</li>`).join("")}</ul></div></div>`;
@@ -51,12 +50,14 @@ const CSV = {};
 const csvBtn = (key, name, head, rows) => { CSV[key] = { name, text: [head].concat(rows).map(r => r.map(v => typeof v === "number" ? String(Math.round(v * 100) / 100).replace(".", ",") : '"' + String(v).replace(/"/g, '""') + '"').join(";")).join("\n") }; return `<button type="button" class="btn ghost sm" data-csv="${key}">Lae andmed alla (CSV)</button>`; };
 let DL = null;
 if (window.claude && typeof window.claude.use === "function") window.claude.use("downloads").then(d => { DL = d; }).catch(() => {});
-document.addEventListener("click", async e => {
+async function dlText(name, text, mime, btn) {
+  if (DL) { try { await DL.save({ filename: name, data: text }); return true; } catch (err) { if (btn && (!err || err.code !== "declined")) btn.textContent = "Allalaadimine pole siin saadaval"; return false; } }
+  if (window.claude) { if (btn) btn.textContent = "Allalaadimine pole siin saadaval"; return false; }
+  const url = URL.createObjectURL(new Blob([text], { type: (mime || "text/plain") + ";charset=utf-8" })), a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); return true;
+}
+document.addEventListener("click", e => {
   const b = e.target.closest("[data-csv]"); if (!b || !CSV[b.dataset.csv]) return;
-  const c = CSV[b.dataset.csv], data = "﻿" + c.text;
-  if (DL) { try { await DL.save({ filename: c.name, data }); } catch (err) { if (!err || err.code !== "declined") b.textContent = "Allalaadimine pole siin saadaval"; } return; }
-  if (window.claude) { b.textContent = "Allalaadimine pole siin saadaval"; return; }
-  const url = URL.createObjectURL(new Blob([data], { type: "text/csv;charset=utf-8" })), a = document.createElement("a"); a.href = url; a.download = c.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const c = CSV[b.dataset.csv]; dlText(c.name, "\ufeff" + c.text, "text/csv", b);
 });
 
 /* ---------- hõpikvihje (dataviz: hover vaikimisi) ---------- */
@@ -116,7 +117,7 @@ function bars(el, rows, o = {}) {
   const vs = rows.map(r => r.v), mn = Math.min(0, ...vs), mx = Math.max(0, ...vs), sp = (mx - mn) || 1, X = v => lw + 10 + (v - mn) / sp * (W - lw - 18 - rw);
   let g = `<line x1="${X(0)}" x2="${X(0)}" y1="0" y2="${H}" stroke="${css("--line2")}"/>`;
   rows.forEach((r, i) => { const y = top + i * rh, a = X(Math.min(0, r.v)), w = Math.max(2, Math.abs(X(r.v) - X(0)));
-    g += `<text x="${lw}" y="${y + rh / 2 + 4}" text-anchor="end" class="t-lab">${esc(r.label)}</text><rect x="${a}" y="${y + 6}" width="${w}" height="${rh - 12}" rx="3" fill="${r.color || css("--a-work")}" opacity="${r.op || .9}" data-tip="${esc(r.tip || `<b>${esc(r.label)}</b>: ${esc(r.txt != null ? r.txt : (o.fmt || sg)(r.v))}`)}"/><text x="${W - 4}" y="${y + rh / 2 + 4}" text-anchor="end" class="t-lab">${esc(r.txt != null ? r.txt : (o.fmt || sg)(r.v))}</text>`; });
+    g += `<text x="${lw}" y="${y + rh / 2 + 4}" text-anchor="end" class="t-lab">${esc(r.label)}</text>${r.sel ? `<rect x="0" y="${y}" width="${W}" height="${rh}" fill="transparent" data-sel="${esc(r.sel)}" style="cursor:pointer"/>` : ""}<rect x="${a}" y="${y + 6}" width="${w}" height="${rh - 12}" rx="3" fill="${r.color || css("--a-work")}" opacity="${r.op || .9}"${r.sel ? ` data-sel="${esc(r.sel)}" style="cursor:pointer"` : ""} data-tip="${esc(r.tip || `<b>${esc(r.label)}</b>: ${esc(r.txt != null ? r.txt : (o.fmt || sg)(r.v))}`)}"/><text x="${W - 4}" y="${y + rh / 2 + 4}" text-anchor="end" class="t-lab">${esc(r.txt != null ? r.txt : (o.fmt || sg)(r.v))}</text>`; });
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.desc || "tulbad")}">${g}</svg>`;
 }
 
