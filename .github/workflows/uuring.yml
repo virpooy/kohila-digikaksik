@@ -1,0 +1,20 @@
+name: Uuring
+# Käsitsi: käivitab uurimisskripti ja salvestab väljundi harusse "uuring" (ei puuduta main-haru andmeid).
+on:
+  workflow_dispatch:
+    inputs:
+      script: { description: "Skript", required: true, default: "tools/uuring/uuri.js" }
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node ${{ inputs.script }} || true
+      - name: Lükka väljund
+        run: |
+          cd out && git init -q -b uuring && git add -A && git -c user.name=uuring -c user.email=a@b.c commit -qm "uuring $(date -u +%FT%TZ)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" uuring
