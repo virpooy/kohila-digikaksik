@@ -113,6 +113,17 @@ async function vald(id, name) {
   return out;
 }
 
+async function region() {
+  /* Eesti maakonnad ja omavalitsused (lihtsustatud ~300 m) voogude ja piirkondliku vaate jaoks */
+  log("Eesti: maakonnad ja omavalitsused");
+  const R = await op(`[out:json][timeout:600];area["ISO3166-1"="EE"][admin_level=2]->.ee;(relation["boundary"="administrative"]["admin_level"~"^(6|7)$"](area.ee););out geom;`);
+  const out = { _doc: "Eesti maakonnad (admin_level 6) ja omavalitsused (7), OpenStreetMap, lihtsustatud ~300 m. p = sildipunkt.", attr: "© OpenStreetMapi kaastöötajad (ODbL)", date: new Date().toISOString().slice(0, 10), mk: [], kov: [] };
+  for (const e of R.elements) { const t = e.tags || {}; if (!t.name) continue; const P = polys(e); if (!P) continue; const k = Math.cos(58.7 * Math.PI / 180);
+    const big = P.outer.sort((a, b) => ringArea(b, k) - ringArea(a, k)), lp = labelPt(big[0], k);
+    (t.admin_level === "6" ? out.mk : out.kov).push({ n: t.name, ehak: t["ref:ehak"] || t["EHAK:code"] || null, p: [r5(lp[0]), r5(lp[1])], rings: big.filter(r => ringArea(r, k) > 2e6).map(r => flat(dp(r, 300, k))) }); }
+  const f = path.join(__dirname, "..", "data", "map", "region.json"); fs.writeFileSync(f, JSON.stringify(out)); log(`data/map/region.json maakondi ${out.mk.length}, omavalitsusi ${out.kov.length}, ${Math.round(fs.statSync(f).size / 1024)} kB`);
+}
+if (process.argv[2] === "region") { fs.mkdirSync(path.join(__dirname, "..", "data", "map"), { recursive: true }); region().catch(e => { console.log("viga:", e.message); process.exit(1); }); } else
 (async () => {
   const dir = path.join(__dirname, "..", "data", "map"); fs.mkdirSync(dir, { recursive: true });
   for (const [id, name] of VALLAD) {
