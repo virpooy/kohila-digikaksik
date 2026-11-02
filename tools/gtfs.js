@@ -299,8 +299,9 @@ function buildMunicipality(ctx, muni) {
     for (const f of feeds) for (const [tid, rows] of f.tripRows) {
       const t = f.trips.get(tid); if (!t || !serviceActive(f, t.svc, date)) continue;
       const route = f.routes.get(t.route); const mode = route ? route.m : null;
+      // ainult reisid, mis peatuvad vallas; piirivälised peatused tulevad nende reiside kaudu (mitte nt Tallinna linnaliinid, mis valda ei sisene)
+      if (!rows.some((r) => f.stops[r.si].muni === muni && r.dep != null)) continue;
       const reg = rows.filter((r) => inReg(f.stops[r.si]) && r.dep != null);
-      if (!reg.length) continue;
       const evs = tripEvents(rows, f.stops, muni);
       if (!mode) { ctx.warnings.add(`${f.name}: liini ${t.route} route_type ${route ? route.type : "?"} ei ole buss ega rong; jäetud välja.`); continue; }
       const sig = mode + "|" + (route.s || "") + "|" + reg.map((r) => r.dep + "@" + f.stops[r.si].n).join(",");
@@ -391,7 +392,7 @@ function DOC(muni, centre) {
     "tln/keskus = otseühendused (sama reis, hilisem peatus, ümberistumiseta): trips = reiside arv, firstArr = varaseim saabumine, minMin = lühim sõiduaeg minutites asula viimasest väljumispeatusest esimese sihtpeatuseni, am7_9 = saabumised 07:00–08:59. " +
     `Vallakeskus = ${centre}; keskusasula enda keskus/kool = null. Valla tasemel arvestatakse keskusesse sõitu keskusest väljaspool asuvatest peatustest. ` +
     "kool.arrBy0815 = hiliseim otsesaabumine keskusesse kell 08:15 või varem, kool.arrFirst = varaseim selline saabumine (null, kui sellist ei ole); kool.ret = reisid keskusest 13:00–17:59, mis peatuvad hiljem selles asulas. " +
-    "stops = peatused valla piires ja kuni ~3 km valla piirikastist väljas (out=true, vald = teise valla nimi või null), kus perioodil peatub mõni reis. Asula on ainult valla piires oleval peatusel. Kõik asulad on igas päevas olemas; 0 tähendab, et sõiduplaanis sel päeval väljumisi ei ole. Puuduv/teadmata väärtus = null. " +
+    "stops = peatused valla piires ja kuni ~3 km valla piirikastist väljas (out=true, vald = teise valla nimi või null), kus perioodil peatub mõni reis; arvesse lähevad ainult reisid, mis peatuvad ka selles vallas. Asula on ainult valla piires oleval peatusel. Kõik asulad on igas päevas olemas; 0 tähendab, et sõiduplaanis sel päeval väljumisi ei ole. Puuduv/teadmata väärtus = null. " +
     "trips = reisimustrid (r = liin, d = direction_id, h = trip_headsign, s = lame massiiv [peatuse indeks, saabumine min, väljumine min, lipud]; lipp 1 = pealeminek pole võimalik, 2 = mahaminek pole võimalik; indeks −1 = Tallinna kesklinna tsoon ühe sündmusena); days[D].t = sel päeval sõitvate reiside indeksid (duplikaadid eemaldatud). Minutid on teenusepäeva algusest ja võivad ületada 1440 (25:10 = 1510). " +
     "Teenus kuupäeval D: calendar nädalapäev ja start≤D≤end, siis calendar_dates 1 lisab, 2 eemaldab. Asula = OSM asustusüksus, võti = täisnimi (Hageri alevik ja Hageri küla on eraldi). " +
     "Kommertsliinid ja tellimusvedu võivad puududa; GTFS ei näita sõitjate arvu, täituvust ega hilinemisi.";
