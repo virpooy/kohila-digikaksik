@@ -43,7 +43,8 @@ function compute(E) {
   out.settle = {}; U.forEach(id => { const P = E.project(ctx, id, {}); out.settle[id] = strip(E.settlementLayer(ctx, id, P, 2036)); out.settle[id + "|acc"] = strip(E.schoolAccess(ctx, id, P, 2036)); });
   out.backtest = {}; U.forEach(id => out.backtest[id] = strip(E.backtest(ctx, id)));
   out.decision = { elamu: strip(E.decision(ctx, "elamu", { unit: "Kohila", n: 120, type: "korter", start: 2028, years: 2 }, {})), kohad: strip(E.decision(ctx, "kohad", { unit: "Kohila", kind: "la", delta: 40, year: 2028 }, {})), siht: strip(E.decision(ctx, "siht", { unit: "Kohila", target: 10000, year: 2035 }, {})) };
-  out.selfTest = E.selfTest(ctx, D("reference")).map(t => [t.id, t.ok]);
+  // Ainult 2.2.0 enesetestid (T1–T18, T6b); hilisemad (T19 …) kontrollib engine.test.js
+  out.selfTest = E.selfTest(ctx, D("reference")).filter(t => /^T([1-9]|1[0-8])b?$/.test(t.id)).map(t => [t.id, t.ok]);
   // Sama serialiseerimine nagu golden-failil (Infinity/NaN → null, funktsioonid välja)
   return JSON.parse(JSON.stringify(out));
 }
