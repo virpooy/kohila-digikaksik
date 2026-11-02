@@ -132,6 +132,22 @@ const Logic = (function () {
     const t = times.filter(x => inWin(x, from, to)).sort((a, b) => a - b); if (t.length < 2) return null;
     let g = 0; for (let i = 1; i < t.length; i++) g = Math.max(g, t[i] - t[i - 1]); return g;
   }
+  /** ytStopCounts: väljumised peatuse kaupa (kaardi peatusemärgid) ühe läbimisega; sihiga ainult väljumised, millele samas reisis
+      järgneb sihtpeatus. Tagastab { day: [], win: [], routes: [Set] } peatuste indeksite järgi. */
+  function ytStopCounts(T, date, Dst, opt, from, to) {
+    const n = T.stops.length, day = new Array(n).fill(0), win = new Array(n).fill(0), routes = Array.from({ length: n }, () => new Set()), D = T.days[date]; opt = opt || {};
+    if (!D || !D.t) return { day, win, routes };
+    for (const ti of D.t) {
+      const tr = T.trips[ti], rt = T.routes[tr.r]; if (!modeOk(rt ? rt.m : null, opt)) continue;
+      const s = tr.s; let destAfter = !Dst;
+      for (let i = s.length - 4; i >= 0; i -= 4) {
+        const k = s[i];
+        if (Dst && Dst.has(k) && !(s[i + 3] & 2)) destAfter = true;
+        else if (k >= 0 && destAfter && !(s[i + 3] & 1) && s[i + 2] != null) { day[k]++; if (inWin(s[i + 2], from, to)) win[k]++; routes[k].add(tr.r); }
+      }
+    }
+    return { day, win, routes };
+  }
   /** dayCheck: kas O-st jõuab otseühendusega sihtkohta Dst hiljemalt arriveBy ja samal teenusepäeval tagasi pärast returnAfter. */
   function dayCheck(T, date, O, Dst, arriveBy, returnAfter, opt) {
     const go = ytConns(T, date, O, Dst, opt), back = ytConns(T, date, Dst, O, opt); if (!go || !back) return null;
@@ -161,6 +177,6 @@ const Logic = (function () {
   }
   const hashBuild = (a, b, p) => "#" + a + (b ? "/" + b : "") + (p && Object.keys(p).length ? "?" + Object.entries(p).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&") : "");
 
-  return { SCHEMA, NA, isNA, dpStatus, eduReserve, stress, capState, budgetSens, budgetTotals, commuteRows, haversine, nearest, ytHourly, inWindow, hm, parseHM, stopsInAsula, stopsNear, ytConns, ytStats, gapMax, dayCheck, scenarioExport, scenarioImport, hashParse, hashBuild };
+  return { SCHEMA, NA, isNA, dpStatus, eduReserve, stress, capState, budgetSens, budgetTotals, commuteRows, haversine, nearest, ytHourly, inWindow, hm, parseHM, stopsInAsula, stopsNear, ytConns, ytStats, ytStopCounts, gapMax, dayCheck, scenarioExport, scenarioImport, hashParse, hashBuild };
 })();
 if (typeof module !== "undefined") module.exports = Logic;

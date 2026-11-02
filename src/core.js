@@ -5,6 +5,7 @@
    igal arvul ühik, aasta ja päritolumärgis; puuduv = „puudub”. Kõik numbrid tulevad mootorist. */
 "use strict";
 const E = window.TwinEngine;
+const BUILD = "__BUILD__"; /* ehituse identifikaator (git-commit ja kuupäev), lisab build.py; tagasiside sidumiseks versiooniga */
 const FILES = ["kov", "pop", "fin", "edu", "ext", "settlements", "dictionary", "usecases", "reference", "geo", "transit", "dp", "commute"];
 const S = { unit: "Kohila", mig: "mean", extra: 0, fert: 0, year: 2036 };
 let D, ctx, TESTS;
@@ -40,7 +41,7 @@ const LS = { get(k, d) { try { const v = localStorage.getItem("kaksik3:" + k); r
 /* ---------- plokkide abifunktsioonid ---------- */
 const ttl = (kick, h, tag = "h3") => `<div class="ttl"><span class="kick">${kick}</span><${tag}>${h}</${tag}></div>`;
 const more = (title, inner, open) => `<details class="more"${open ? " open" : ""}><summary>${title}</summary><div class="in">${inner}</div></details>`;
-const meta = (src, extra) => `<div class="meta"><span class="srcs">Allikad: ${Array.isArray(src) ? src.map(srcBtn).join(" ") : src} <span class="dim">· mootor ${esc(E.VERSION.split(" ")[0])}</span></span>${extra || ""}</div>`;
+const meta = (src, extra) => `<div class="meta"><span class="srcs">Allikad: ${Array.isArray(src) ? src.map(srcBtn).join(" ") : src} <span class="dim">· mootor ${esc(E.VERSION.split(" ")[0])} · ehitus ${esc(BUILD)}</span></span>${extra || ""}</div>`;
 const legend = items => `<div class="legend">${items.map(i => `<span><i class="${i.k || ""}" style="--c:${i.c}"></i>${esc(i.n)}</span>`).join("")}</div>`;
 const table = (head, rows, numFrom = 1) => `<div class="tw"><table><thead><tr>${head.map((h, i) => `<th${i >= numFrom ? ' class="n"' : ""}>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr${r.cls ? ` class="${r.cls}"` : ""}>${(r.cells || r).map((c, i) => `<td${i >= numFrom ? ' class="n"' : ""}>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 const use = (ok, no, mind) => `<div class="k9use"><div style="--c:var(--ok)"><b>${GLY.ok[0]} Milleks sobib</b><ul>${ok.map(x => `<li>${x}</li>`).join("")}</ul></div><div style="--c:var(--crit)"><b>${GLY.crit[0]} Milleks ei sobi</b><ul>${no.map(x => `<li>${x}</li>`).join("")}</ul></div><div style="--c:var(--warn)"><b>${GLY.warn[0]} Pea meeles</b><ul>${mind.map(x => `<li>${x}</li>`).join("")}</ul></div></div>`;

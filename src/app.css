@@ -256,3 +256,24 @@ dialog.srcdlg .in{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
 .f select,.f input{min-width:0;max-width:100%}
 .f .st,.bcard .st,.callout .st{white-space:normal}
 .k9ch h1:focus{outline:none}
+
+/* kaart: kompaktne päis, filtrite kokkuvõte, täisekraan (11.2026) */
+.k9ch.compact>header{gap:2px;padding-bottom:var(--sp2);margin-bottom:var(--sp3)}
+.k9ch.compact>header h1{font-size:clamp(18px,2.2vw,22px)}
+.k9ch.compact>header .k9sub{margin-top:2px}
+.k9ch.compact .ttl h2{font-size:clamp(17px,1.9vw,21px)}
+.ttl .find{display:block;font-size:.8em;font-weight:600;margin-top:2px}
+.fsum{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:6px;font-size:12.5px}
+.fsum .chip{border:1px solid var(--line2);border-radius:999px;padding:2px 9px;background:var(--surf);color:var(--ink)}
+.fsum2{color:var(--mut);margin:0 0 6px}
+.fsx{display:none;position:absolute;left:10px;top:10px;z-index:5}
+.atl:fullscreen .fsx,.atl.fsfake .fsx{display:inline-flex}
+.atl:fullscreen,.atl.fsfake{grid-template-columns:minmax(0,1fr) 320px;align-items:start}
+.atl:fullscreen .mapbox svg,.atl.fsfake .mapbox svg{max-height:calc(100vh - 90px)}
+.atl:fullscreen .atlside,.atl.fsfake .atlside{position:static;max-height:calc(100vh - 24px);overflow:auto}
+@media (max-width:980px){.atl:fullscreen,.atl.fsfake{grid-template-columns:1fr}}
+.nearl{margin:4px 0 0;padding-left:18px;font-size:13px;display:flex;flex-direction:column;gap:3px}
+tr.warnrow td{background:color-mix(in srgb,var(--warn) 9%,transparent)}
+.ckform{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+#mapExtra{display:flex;flex-direction:column;gap:var(--sp4);margin-top:var(--sp4)}
+@media (max-width:600px){.maptools .btn.sm{padding:4px 8px;font-size:12px}.fsum{font-size:12px}.mapctl button{width:30px;height:30px}}
