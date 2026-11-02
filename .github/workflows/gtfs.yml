@@ -1,0 +1,51 @@
+name: Ühistranspordi tunnid
+# Laeb Transpordiameti GTFS-vood (eu-gtfs.remix.com), arvutab väljumised asula ja tunni kaupa (tools/gtfs_tunnid.js)
+# ja salvestab data/transit_tunnid.json. Kui mõni voog ei lae, ei salvestata midagi (osalisi andmeid ei kasutata).
+# Lisaks kontrollib, kas Statistikaameti tabelis RL21163 on omavalitsuste vaheline pendelrände maatriks (ainult logi).
+on:
+  workflow_dispatch:
+    inputs:
+      paev: { description: "Analüüsipäev AAAA-KK-PP (tühi = järgmine tavaline teisipäev)", required: false, default: "" }
+  push:
+    branches: [gtfs-tunnid]
+    paths: [tools/gtfs_tunnid.js, .github/workflows/gtfs.yml]
+  schedule:
+    - cron: "17 4 5 * *"
+permissions:
+  contents: write
+jobs:
+  gtfs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Lae GTFS-vood
+        run: |
+          mkdir -p feeds; echo "{" > feeds/allikad.json; sep=""
+          for v in raplamaa harjumaa elron tallinn; do
+            url="https://eu-gtfs.remix.com/$v.zip"
+            curl -fsSL --retry 3 -A "kohila-digikaksik (github.com/virpooy/kohila-digikaksik)" -o feeds/$v.zip "$url"
+            unzip -q -o feeds/$v.zip -d feeds/$v
+            echo "$v: $(du -h feeds/$v.zip | cut -f1), failid: $(ls feeds/$v | tr '\n' ' ')"
+            printf '%s"%s":{"url":"%s","loetud":"%s"}' "$sep" "$v" "$url" "$(date -u +%Y-%m-%d)" >> feeds/allikad.json; sep=","
+          done
+          echo "}" >> feeds/allikad.json
+      - name: Arvuta tunnid
+        run: |
+          node tools/gtfs_tunnid.js feeds ${{ inputs.paev }} | tee gtfs.txt
+          echo "::notice title=GTFS::$(tr '\n' ' ' < gtfs.txt)"
+      - name: Kontrolli RL21163 (pendelränne)
+        continue-on-error: true
+        run: |
+          curl -fsSL --retry 2 https://andmed.stat.ee/api/v1/et/stat/RL21163 -o rl.json
+          node -e 'const j=require("./rl.json");const s=(j.variables||[]).map(v=>`${v.code} [${v.values.length}]: ${v.valueTexts.slice(0,6).join(" | ")}${v.values.length>6?" …":""}`).join("\n");console.log(j.title+"\n"+s)' | tee rl.txt
+          echo "::notice title=RL21163::$(tr '\n' ' ' < rl.txt)"
+      - name: Salvesta
+        run: |
+          if [ -z "$(git status --porcelain data/)" ]; then echo "Muudatusi ei ole"; exit 0; fi
+          git config user.name "gtfs-uuendus"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/transit_tunnid.json
+          git commit -m "Ühistranspordi tunnid $(date +%Y-%m-%d)" -m "$(cat gtfs.txt)"
+          git push
