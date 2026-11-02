@@ -1,39 +1,45 @@
 # Kohila digikaksik
 
-Kohila valla digitaalse kaksiku arvutusmootor ja eelmudel (mootor 2.0.0). Mudel ühendab rahvastiku üheaastaste vanuste kohordimudeli (sama mis Raplamaa arengukangas v6), haridusvajaduse, tulumaksu, ühikukulud, investeeringuvajaduse, võla raja, tasandusfondi ja asulakihi ning kontrollib end tagantjärele prognoosiga (2021→2026).
+Kohila ja Rae valla (ning Raplamaa valdade) digitaalne kaksik: deterministlik arvutusmootor (TwinEngine 3.0.0) ja veebileht, mis aitab vallaametnikel ja otsustajatel näha, mis olukord on, millised piirkonnad vajavad tähelepanu, mis muutub valitud stsenaariumis, millistel eeldustel tulemus kehtib ja millised andmed puuduvad.
+
+Mudel ühendab rahvastiku üheaastaste vanuste kohortmudeli (sama mis Raplamaa arengukangas v6), lasteaia- ja koolinõudluse ning kohad, tulumaksu, ühikukulud, investeeringuvajaduse, võla raja, tasandusfondi, elamuarenduse mõju, asulakihi, arengukava eesmärgid ja otsuse mõju eelhinnangu. Kaardil on OpenStreetMapi aluskiht, haridusasutused, planeeringud, ühistransport (Transpordiameti GTFS) ja tööalased seosed (REL 2021).
 
 **Põhimõtted**
-- Isikuandmeid ei kasutata. Sisendiks on ainult koondandmed; alla 5 inimesega lahtrid peidetakse.
+- Isikuandmeid ei kasutata. Sisendiks on ainult avaandmed ja koondandmed; alla 5 inimesega lahtrid peidetakse.
 - Kõik numbrid arvutab deterministlik mootor (`engine.js`). AI numbreid ei arvuta.
+- Puuduv väärtus on „puudub”, mitte 0. Igal arvul on allikas, periood ja päritolumärgis (ametlik, mudel, eeldus, hinnang).
 - Tööriist aitab otsuseid ette valmistada; otsuse ja selle sisu eest vastutab pädev ametnik või organ.
 
 ## Ülesehitus
 
-| Fail | Sisu |
+| Fail / kaust | Sisu |
 |---|---|
-| `engine.js` | Arvutusmootor (TwinEngine). Puhtad funktsioonid, töötab brauseris ja Node'is. |
-| `engine.test.js` | Enesetestid T1–T15: põhimudeli võrdlus (`data/reference.json`), mõjukanga võrdlus ja otsuste E1–E10 kontroll. |
-| `tools/rak_reference.js` | Koostab `data/reference.json` otse Raplamaa arengukanga lähtekoodist: `node tools/rak_reference.js <raplamaa-arengumudel kaust> > data/reference.json`. |
-| `index.src.html` | Veebilehe lähtefail; `build.py` lisab mootori ja kirjutab `index.html`. |
-| `data/` | Koondandmed: `kov.json` (omavalitsuste seadistus), `pop`, `fin`, `edu`, `ext`, `settlements`, `peers`, andmesõnastik `dictionary.json`, kasutusjuhud `usecases.json`. |
-| `docs/otsused.md` | Otsuste logi. |
-| `docs/vordlus.md` | Viie eelmudeli võrdlus, otsused E1–E10 ja etapi 2 tulemus. |
-| `docs/kaardistus/` | Eelmudelite üksikasjalikud kaardistused ja Kohila arengumudeli vastuolude audit. |
+| `engine.js` | Arvutusmootor (TwinEngine 3.0.0): puhtad funktsioonid, töötab brauseris ja Node'is. Ülevaade: `docs/mootor-3.md`. |
+| `src/` | Veebilehe lähtekood: `shell.html`, `app.css`, `core.js`, `logic.js` (testitav UI-loogika), `sources.js` (allikakataloog), peatükid `ch_otsus.js`, `ch_plan.js`, `ch_kaart.js`, `ch_dev.js`, `main.js`. |
+| `build.py` | Paneb `src/` ja `engine.js` kokku failiks `index.html`. |
+| `data/` | Koondandmed: `kov.json` (omavalitsuste seadistus ja eesmärgid), `pop`, `fin`, `edu`, `ext`, `settlements`, `peers`, `commute` (REL 2021), `dp` (planeeringud), `map/` (OSM), `transit/` (GTFS), `reference.json` (põhimudeli väljundid), `dictionary.json` (andmesõnastik), `usecases.json`. |
+| `tools/` | Andmete uuendamine: `update_open_data.js` (MTA, RR302), `osm_kaart.js` (kaart), `gtfs.js` (ühistransport), `rak_reference.js`, `pk_export.py`, `import_vald.py`. |
+| `tests/` | Mootori pariteet (`parity.test.js`), sisulised kontrollid (`content.test.js`), GTFS (`gtfs.test.js`), brauseri suitsutest (`ui/smoke.js`). |
+| `planeeringukontroll/` | Kohila planeeringukontrolli rakenduse lähtekood, audit ja testid. |
+| `docs/` | `uleandmine.md` (seis ja avatud tööd), `otsused.md` (otsuste logi), `mootor-3.md`, `gtfs.md`, `taiendus-2026-11.md`, `vordlus.md`, `kaardistus/`, `uuringud/`. |
+| `CLAUDE.md` | Arendusjuhend Claude Code'ile (reeglid ja töökord). |
 
 ## Käivitamine
 
 ```
-node engine.test.js     # testid
-python3 build.py        # ehitab index.html
-python3 -m http.server  # ava http://localhost:8000
+node engine.test.js            # mootori testid
+node tests/content.test.js     # sisulised kontrollid
+python3 build.py               # ehitab index.html
+python3 -m http.server 8765    # ava http://localhost:8765
+node tests/ui/smoke.js         # brauseritest (vajab Playwrighti)
 ```
 
-GitHub Actions jooksutab iga muudatuse peale testid ja avaldab lehe GitHub Pagesis.
+GitHub Actions jooksutab iga muudatuse peale testid ja avaldab lehe GitHub Pagesis. Andmete uuendamise töövood: `andmed.yml` (kord kuus), `kaart.yml`, `yt.yml` ja `uuring.yml` (käsitsi).
 
 ## Andmed
 
-Avaandmed: Statistikaamet (RV0282U, RV112U, RV49U, RVR02, RV0452, RR300, RR302, EH46U, RL21003, RL21163, RL21217), Haridussilm, Maksu- ja Tolliamet, valdade eelarvestrateegiad. Täielik allikakaart on failis `data/dictionary.json`.
+Avaandmed: Statistikaamet (RV0282U, RV112U, RV49U, RVR02, RV0452, RR300, RR302, EH46U, RL21003, RL21163, RL21217), Haridussilm/EHIS, Maksu- ja Tolliamet, Transpordiamet (GTFS), © OpenStreetMapi kaastöötajad (ODbL), valdade arengukavad ja eelarvestrateegiad. Iga allika periood ja hankimise kuupäev on lehel („Andmed ja metoodika” → „Allikad”) ja failis `src/sources.js`; täielik allikakaart on `data/dictionary.json`.
 
 ## Litsents
 
-Lähtekood: © Peeter Pallav, litsents [EUPL-1.2](LICENSE). Avaandmed kuuluvad nende avaldajatele.
+Lähtekood: © Peeter Pallav, litsents [EUPL-1.2](LICENSE). Avaandmed kuuluvad nende avaldajatele; kaardiandmed © OpenStreetMapi kaastöötajad (ODbL).
