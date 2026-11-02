@@ -23,7 +23,7 @@ Fail on jagatud nummerdatud sektsioonideks. Igal funktsioonil on lühike eestike
 | 16 | Asulad ja koolitee | `settlementInfo`, `settlementLayer`, `schoolAccess` |
 | 17 | Tagasitest | `backtest` |
 | 18 | Otsused | `decision` → `decisionHousing`, `decisionPlaces`, `decisionTarget` |
-| 19–21 | Enesetest, API, eksport | `selfTest` (T1–T18), `API`, UMD-eksport |
+| 19–21 | Enesetest, API, eksport | `selfTest` (T1–T19), `API`, UMD-eksport |
 
 Keskkonna leping on sama mis enne:
 - brauseris on mootor `window.TwinEngine`, Node'is `module.exports`;
@@ -50,4 +50,8 @@ Sisemised muudatused, mis tulemusi ei muuda:
   2. Arvutab samad kirjed uue mootoriga ja võrdleb kõiki väärtusi sügavuti. Arvude suhteline vahe võib olla kuni 1e-9 (nulli lähedal absoluutne 1e-9). Sõned, tõeväärtused, `null` ja võtmed peavad olema täpselt samad.
   3. Lubatud on ainult üks erinevus: `decision.elamu.text`. Test kontrollib, et uus tekst on vana tekst, kuhu on lisatud tasandusfondi lause ja kus neto on asendatud väärtusega `dNet`. Kõik muud arvud tekstis peavad jääma samaks.
 - **Tulemus.** Kõigis 21 rühmas (≈ 25 000 väärtust) on suurim vahe 0, st tulemused on bitti-bitti samad.
-- **CI.** `node engine.test.js` käivitab enesetesti T1–T18 ja seejärel pariteeditesti. Kui midagi ebaõnnestub, on väljumiskood 1.
+- **CI.** `node engine.test.js` käivitab enesetestid T1–T19 ja seejärel pariteeditesti. Kui midagi ebaõnnestub, on väljumiskood 1.
+
+## 3.0.1 (02.11.2026)
+
+`buildTax` võtab 2026. aasta tulumaksu hinnangu kuude arvu MTA andmetest (`MTA.tm26[id].length`), mitte konstandist 9. Nii ei liida kuine andmeuuendus hinnangusse 13 kuud. 9 kuu andmetega on kõik tulemused samad mis 3.0.0-s. Uus enesetest T19 kontrollib kunstliku lisakuuga, et hinnang koosneb 12 kuust. Pariteeditest võrdleb enesetestidest ainult 2.2.0 teste (T1–T18, T6b).

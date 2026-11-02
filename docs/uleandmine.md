@@ -6,8 +6,8 @@ Kaksiku arendus liigub claude.ai vestlusest Claude Code'i. See fail kirjeldab se
 
 | Osa | Seis |
 |---|---|
-| Mootor | `engine.js` 3.0.0 (01.11.2026), nullist ümber kirjutatud; võrdlus 2.2.0-ga: 26 000+ väärtust kattuvad täpselt (`docs/mootor-3.md`) |
-| Testid | `node engine.test.js` (enesetestid T1–T18 + pariteet) ✓ · `node tests/content.test.js` 51/51 ✓ · `node tests/gtfs.test.js` 29/29 ✓ · `node tests/ui/smoke.js` ✓ |
+| Mootor | `engine.js` 3.0.1 (02.11.2026; 3.0.0 nullist ümber kirjutatud 01.11); võrdlus 2.2.0-ga: 26 000+ väärtust kattuvad täpselt (`docs/mootor-3.md`) |
+| Testid | `node engine.test.js` (enesetestid T1–T19 + pariteet) ✓ · `node tests/content.test.js` 51/51 ✓ · `node tests/gtfs.test.js` 29/29 ✓ · `node tests/ui/smoke.js` ✓ |
 | Leht | GitHub Pages (CI „Testid ja leht”, viimane edukas: commit `6528fb1`, 01.11.2026 22:04) ja claude.ai artefakt `AkMamLcPR5zDJDwFdTQdqJ` versioon 13 – sama kood |
 | Liides | 5 rühma: Ülevaade · Kaart ja piirkonnad · Rahvastik ja teenused · Stsenaariumid ja otsused · Andmed ja metoodika (25 jaotist) |
 | Andmed | 5 valda (Rapla, Kohila, Märjamaa, Kehtna, Rae) + Rapla maakond; OSM kaardikihid 01.11.2026; GTFS analüüsipäevad 02.–15.11.2026 |
@@ -20,6 +20,7 @@ Kaksiku arendus liigub claude.ai vestlusest Claude Code'i. See fail kirjeldab se
 | 30.10 | Mootor 2.0–2.1: põhimudeli kordamine, otsused E1–E10, planeeringukontrolli mõjuväljad |
 | 31.10 | Mootor 2.2.0 ja ideekavandi 7 sammu (kaart, planeeringud, stsenaariumid, ühistransport, andmete uuendus, eesmärgid, AI-analüütik); Rae avaandmed; magistritöö soovitused |
 | 31.10–01.11 | Kaksik 3: mootor 3.0.0 + uus liides `src/` (k9 + hele teema, peatükid küsimustena) |
+| 02.11 | Üleandmine Claude Code'ile; mootor 3.0.1 – tulumaksu hinnangu kuude arv MTA andmetest (P0-1, PR #1) |
 | 01.11 | Kaart OSM-aluskihiga kõigile viiele vallale; täiendus „usaldusväärsus, kaart, liikuvus” (`docs/taiendus-2026-11.md`): allikakataloog, päritolumärgised, tingimuslikud järeldused, teenuste reserv ja stressitest, planeeringute puudulikkuse hoiatus, kaart neljas režiimis, GTFS-töötlus, RL21163 pendelränne, eelarve tundlikkus, eksport/import, 5 menüürühma, sisulised testid |
 
 ## 2. Avatud tööd tähtsuse järjekorras
@@ -28,9 +29,8 @@ Iga ülesande juures on tekst, mille võib Claude Code'ile kleepida. Ülesanded,
 
 ### P0 – enne 05.11.2026 (kuine andmeuuendus)
 
-**1. Tulumaksu 2026 hinnangu kuude arv** – vajab Peetri kinnitust (mootori muudatus).
-`buildTax` (`engine.js` sektsioon 10) kasutab fikseeritud `MTA_MONTHS = 9`. `andmed.yml` lisab 5. novembril `fin.json`-i `MTA.tm26`-sse oktoobri; siis liidab `estimate` 10 kuud 2026 + 3 kuud 2025 (13 kuud) ja kasvutempo arvutatakse valesti.
-> Paranda `engine.js` `buildTax`: kasuta kuude arvuna `MTA.tm26[id].length` (ja `tm25.slice(0, n)`), mitte konstanti 9. Tänaste andmetega (9 kuud) peab tulemus jääma bitti-täpselt samaks – pariteeditest peab läbima muutmata. Lisa enesetest, mis kunstliku 10. kuuga kontrollib, et hinnang koosneb 12 kuust. Tõsta `VERSION` 3.0.1, lisa logirida ja kirje `docs/otsused.md`-sse. Eraldi haru + PR.
+**1. Tulumaksu 2026 hinnangu kuude arv** – ✓ tehtud 02.11.2026 (mootor 3.0.1, [PR #1](https://github.com/virpooy/kohila-digikaksik/pull/1), Peeter kinnitas ja ühendati).
+`buildTax` kasutab kuude arvuna `MTA.tm26[id].length`; enesetest T19 kontrollib lisakuuga 12 kuu hinnangut. Pärast 05.11 `andmed.yml` käiku kontrolli, et CI läbib ja T19 näitab 10 kuud 2026 + 2 kuud 2025.
 
 ### P1 – järgmised kaks nädalat
 
@@ -95,4 +95,4 @@ Kontrollitud 02.11.2026: `ext.COM` Tallinnas töötajad ja hõivatud kokku ühti
 
 ## 5. Esimene ülesanne Claude Code'ile
 
-> Loe `CLAUDE.md` ja `docs/uleandmine.md`. Käivita `node engine.test.js`, `node tests/content.test.js`, `python3 build.py` ja `node tests/ui/smoke.js` (server: `python3 -m http.server 8765`) ning raporteeri tulemus. Seejärel tee ülesanne P0-1 eraldi harus ja ava PR; ära ühenda enne Peetri kinnitust.
+✓ Tehtud 02.11.2026: kõik neli testi läbisid (Windows, kohalik arvuti) ja P0-1 ühendati PR-iga #1. Järgmine on P1-2 (ühistranspordi andmete regulaarne uuendus). claude.ai artefakt on veel versioonil 13 (mootor 3.0.0) – uuenda see pärast järgmist muudatust.

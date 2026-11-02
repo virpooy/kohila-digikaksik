@@ -1,6 +1,6 @@
 # Kohila digikaksik
 
-Kohila ja Rae valla (ning Raplamaa valdade) digitaalne kaksik: deterministlik arvutusmootor (TwinEngine 3.0.0) ja veebileht, mis aitab vallaametnikel ja otsustajatel näha, mis olukord on, millised piirkonnad vajavad tähelepanu, mis muutub valitud stsenaariumis, millistel eeldustel tulemus kehtib ja millised andmed puuduvad.
+Kohila ja Rae valla (ning Raplamaa valdade) digitaalne kaksik: deterministlik arvutusmootor (TwinEngine 3.0.1) ja veebileht, mis aitab vallaametnikel ja otsustajatel näha, mis olukord on, millised piirkonnad vajavad tähelepanu, mis muutub valitud stsenaariumis, millistel eeldustel tulemus kehtib ja millised andmed puuduvad.
 
 Mudel ühendab rahvastiku üheaastaste vanuste kohortmudeli (sama mis Raplamaa arengukangas v6), lasteaia- ja koolinõudluse ning kohad, tulumaksu, ühikukulud, investeeringuvajaduse, võla raja, tasandusfondi, elamuarenduse mõju, asulakihi, arengukava eesmärgid ja otsuse mõju eelhinnangu. Kaardil on OpenStreetMapi aluskiht, haridusasutused, planeeringud, ühistransport (Transpordiameti GTFS) ja tööalased seosed (REL 2021).
 
@@ -14,7 +14,7 @@ Mudel ühendab rahvastiku üheaastaste vanuste kohortmudeli (sama mis Raplamaa a
 
 | Fail / kaust | Sisu |
 |---|---|
-| `engine.js` | Arvutusmootor (TwinEngine 3.0.0): puhtad funktsioonid, töötab brauseris ja Node'is. Ülevaade: `docs/mootor-3.md`. |
+| `engine.js` | Arvutusmootor (TwinEngine 3.0.1): puhtad funktsioonid, töötab brauseris ja Node'is. Ülevaade: `docs/mootor-3.md`. |
 | `src/` | Veebilehe lähtekood: `shell.html`, `app.css`, `core.js`, `logic.js` (testitav UI-loogika), `sources.js` (allikakataloog), peatükid `ch_otsus.js`, `ch_plan.js`, `ch_kaart.js`, `ch_dev.js`, `main.js`. |
 | `build.py` | Paneb `src/` ja `engine.js` kokku failiks `index.html`. |
 | `data/` | Koondandmed: `kov.json` (omavalitsuste seadistus ja eesmärgid), `pop`, `fin`, `edu`, `ext`, `settlements`, `peers`, `commute` (REL 2021), `dp` (planeeringud), `map/` (OSM), `transit/` (GTFS), `reference.json` (põhimudeli väljundid), `dictionary.json` (andmesõnastik), `usecases.json`. |

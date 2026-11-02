@@ -27,7 +27,7 @@ Kohila ja Rae valla (ning Raplamaa valdade) digitaalne kaksik: deterministlik ar
 
 | Asukoht | Sisu |
 |---|---|
-| `engine.js` | Mootor 3.0.0: puhtad funktsioonid, sektsioonid 1–21, avalik API massiivis `API`, `selfTest` T1–T18. Brauseris `window.TwinEngine`, Node'is `module.exports`. Ülevaade `docs/mootor-3.md`. |
+| `engine.js` | Mootor 3.0.1: puhtad funktsioonid, sektsioonid 1–21, avalik API massiivis `API`, `selfTest` T1–T19 (pariteet võrdleb neist ainult 2.2.0 teste T1–T18). Brauseris `window.TwinEngine`, Node'is `module.exports`. Ülevaade `docs/mootor-3.md`. |
 | `src/shell.html` | Lehe karkass, kohatäitjad `/*__CSS__*/`, `/*__ENGINE__*/`, `/*__APP__*/`. |
 | `src/app.css` | k9 visuaalsüsteem, tume ja hele teema, kaardi värvid (`--m-*`). |
 | `src/core.js` | Olek `S` (vald, rändemuster, lisaränne, sündimus, aasta), andmete laadimine, vorming, `ttl/more/meta/table/use`, CSV ja `dlText`, hõpikvihje, joonised `timeChart`, `bars`, `waterfall`, `goalRows`, `stack`, `heat`. |
@@ -68,6 +68,8 @@ python3 build.py               # ehitab index.html
 python3 -m http.server 8765    # leht: http://localhost:8765
 node tests/ui/smoke.js         # brauseritest: kõik jaotised 1440 px ja 390 px, vead ja horisontaalne kerimine
 ```
+
+Windowsis: käivita `python build.py` seadega `PYTHONUTF8=1` (muidu loeb Python faile cp1252-na); brauseritest vajab `npm install --no-save playwright` ja `npx playwright install chromium` (`node_modules/` on gitis ignoreeritud).
 
 CI (`.github/workflows/ci.yml`, „Testid ja leht”) käivitab mootori- ja sisutestid, ehitab lehe ja avaldab GitHub Pagesi iga `main`-i push'i peale.
 
