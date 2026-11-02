@@ -95,4 +95,4 @@ Kontrollitud 02.11.2026: `ext.COM` Tallinnas töötajad ja hõivatud kokku ühti
 
 ## 5. Esimene ülesanne Claude Code'ile
 
-✓ Tehtud 02.11.2026: kõik neli testi läbisid (Windows, kohalik arvuti) ja P0-1 ühendati PR-iga #1. Järgmine on P1-2 (ühistranspordi andmete regulaarne uuendus). claude.ai artefakt on veel versioonil 13 (mootor 3.0.0) – uuenda see pärast järgmist muudatust.
+✓ Tehtud 02.11.2026: kõik neli testi läbisid (Windows, kohalik arvuti) ja P0-1 ühendati PR-iga #1. Järgmine on P1-2 (ühistranspordi andmete regulaarne uuendus). claude.ai artefakt uuendati versioonile 14 (mootor 3.0.1).
