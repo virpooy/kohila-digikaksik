@@ -98,7 +98,7 @@ const Logic = (function () {
   /** ytConns(T, date, O, Dst, opt): reisid, mis väljuvad peatustest O (Set). Iga reis loetakse üks kord, ka mitme O peatusega.
       Ilma sihita (Dst = null): t = reisi esimene väljumine O-st. Sihiga: otseühendus = sama reis peatub hiljem Dst peatuses
       (mahaminek lubatud); t = viimane O väljumine enne esimest sellist sihtpeatust, arr = saabumine sinna.
-      Tagastab { list: [{ ti, t, arr, r, m, d, h, from, to }], ev: [kõigi O väljumiste ajad] } või null, kui päeva pole. */
+      Tagastab { list: [{ ti, t, arr, r, m, d, h, from, to }], ev: [O väljumiste ajad; sihiga ainult need, millele järgneb sihtpeatus] } või null, kui päeva pole. */
   function ytConns(T, date, O, Dst, opt) {
     const day = T && T.days[date]; if (!day || !day.t) return null; opt = opt || {};
     const list = [], ev = [];
@@ -107,10 +107,11 @@ const Logic = (function () {
       const s = tr.s; let first = null, lastO = null, hit = null;
       for (let i = 0; i < s.length; i += 4) {
         const k = s[i];
-        if (O.has(k) && !(s[i + 3] & 1) && s[i + 2] != null) { ev.push(s[i + 2]); if (first == null) first = i; lastO = i; continue; }
+        if (O.has(k) && !(s[i + 3] & 1) && s[i + 2] != null) { if (!Dst) ev.push(s[i + 2]); if (first == null) first = i; lastO = i; continue; }
         if (Dst && hit == null && lastO != null && Dst.has(k) && !(s[i + 3] & 2) && s[i + 1] != null) hit = [lastO, i];
       }
       if (first == null) continue;
+      if (Dst && hit) { let after = false; for (let i = s.length - 4; i >= 0; i -= 4) { const k = s[i]; if (Dst.has(k) && !O.has(k) && !(s[i + 3] & 2)) after = true; else if (after && O.has(k) && !(s[i + 3] & 1) && s[i + 2] != null) ev.push(s[i + 2]); } } // sihiga: ainult väljumised, millele järgneb sihtpeatus
       if (!Dst) list.push({ ti, t: s[first + 2], arr: null, r: tr.r, m, d: tr.d, h: tr.h, from: s[first], to: null });
       else if (hit) list.push({ ti, t: s[hit[0] + 2], arr: s[hit[1] + 1], r: tr.r, m, d: tr.d, h: tr.h, from: s[hit[0]], to: s[hit[1]] });
     }

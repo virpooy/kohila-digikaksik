@@ -20,7 +20,7 @@ Kaksiku arendus liigub claude.ai vestlusest Claude Code'i. See fail kirjeldab se
 | 30.10 | Mootor 2.0–2.1: põhimudeli kordamine, otsused E1–E10, planeeringukontrolli mõjuväljad |
 | 31.10 | Mootor 2.2.0 ja ideekavandi 7 sammu (kaart, planeeringud, stsenaariumid, ühistransport, andmete uuendus, eesmärgid, AI-analüütik); Rae avaandmed; magistritöö soovitused |
 | 31.10–01.11 | Kaksik 3: mootor 3.0.0 + uus liides `src/` (k9 + hele teema, peatükid küsimustena) |
-| 02.11 | Üleandmine Claude Code'ile; mootor 3.0.1 – tulumaksu hinnangu kuude arv MTA andmetest (P0-1, PR #1) |
+| 02.11 | Üleandmine Claude Code'ile; mootor 3.0.1 – tulumaksu hinnangu kuude arv MTA andmetest (P0-1, PR #1); kaardi ja liikuvusanalüüsi täpsustus, GTFS skeem 2 (haru `liikuvus-tapsus`) |
 | 01.11 | Kaart OSM-aluskihiga kõigile viiele vallale; täiendus „usaldusväärsus, kaart, liikuvus” (`docs/taiendus-2026-11.md`): allikakataloog, päritolumärgised, tingimuslikud järeldused, teenuste reserv ja stressitest, planeeringute puudulikkuse hoiatus, kaart neljas režiimis, GTFS-töötlus, RL21163 pendelränne, eelarve tundlikkus, eksport/import, 5 menüürühma, sisulised testid |
 
 ## 2. Avatud tööd tähtsuse järjekorras
@@ -76,8 +76,9 @@ Kontrollitud 02.11.2026: `ext.COM` Tallinnas töötajad ja hõivatud kokku ühti
 - Teenuste piisavus on valla koondarvestus; asutuste vahel nõudlust ei jaotata.
 - Eelarves ei ole hinnatase ühtlustatud (tulumaks 2026, kulud 2023–2025); tulemus on suurusjärk, tundlikkus on näidatud.
 - Tööalased seosed: ainult Tallinn ja Tartu on kaardil; sissetulev pendelränne puudub; andmed 31.12.2021.
-- Ühistransport: sõiduplaan, mitte kasutus; ainult otseühendused; kommertsliinid võivad puududa; asula = peatused OSM-piirides (nt Masti, Prillimäe Kohilas, Kopli, Seli Raes: 0).
-- Hageri alevik ja Hageri küla on ühistranspordis üks võti „Hageri” (samuti Hagudi, Kaerepere).
+- Ühistransport: sõiduplaan, mitte kasutus; ainult otseühendused; kommertsliinid võivad puududa. Meetod A (asula territoorium) annab nt Masti ja Prillimäe Kohilas 0 peatust – vaates on see „peatust pole”, mitte „0 reisi”; meetod B näitab lähimaid peatusi (Masti peatus on Aandu külas, Prillimäe peatus Salutaguse külas).
+- Hageri alevik ja Hageri küla on alates GTFS skeemist 2 (02.11.2026) eraldi. Mõlemal on 24 reisi, sest samad liinid läbivad mõlemat; väljumised erinevad (97 ja 73).
+- `yt.yml` teeb salvestamisel alati `git pull --rebase origin main`; arendusharus käivitades salvestus ebaõnnestub, kuid töövoog lõpeb edukana. Parandus on kohalikus harus `yt-yml-parandus`; üleslaadimiseks vajab gh token `workflow` õigust.
 - Mudelit ei ole sõltumatult üle vaadatud.
 
 ## 4. Lingid

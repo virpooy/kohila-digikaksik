@@ -81,6 +81,8 @@ function eq(name, got, exp) {
   const dc = L.dayCheck(o, SUN, set("A3"), new Set([-1]), 480, 900);
   eq("(8) tööpäeva kontroll: minek ja tagasi", [dc.go.t, dc.go.arr, dc.wait, dc.back[0].t, dc.back[0].arr, dc.backWait], [400, 460, 20, 965, 1010, 65]);
   eq("(8) liiga vara: sobivat otseühendust ei leitud (null, mitte 0)", L.dayCheck(o, SUN, set("A3"), new Set([-1]), 420, 900).go, null);
+  const toT = L.ytConns(o, MON, set("A1", "A2", "K1"), new Set([-1]));
+  eq("(8) sihiga väljumised: ainult need, millele järgneb sihtpeatus (t2 K1 → A1 ei loe)", [toT.list.length, toT.ev.length], [1, 3]);
   const toK = L.ytConns(o, MON, set("C1"), set("K1"));
   eq("(9) suunatud paus: Cküla → keskus", [toK.list.map((c) => c.t), L.gapMax(toK.list.map((c) => c.t), 5, 23)], [[360, 460, 480], 100]);
   const fromK = L.ytConns(o, MON, set("K1"), set("C1"));

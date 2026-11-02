@@ -240,7 +240,7 @@ dialog.srcdlg .in{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
 @media (prefers-reduced-motion:reduce){.flowanim{animation:none}}
 .menubtn{display:none}
 .mnav{display:flex;flex-direction:column;gap:12px;padding-block:10px;border-top:1px solid var(--line)}
-.mnav[hidden]{display:none}
+.mnav[hidden],.k9top .row2[hidden]{display:none}
 .mgrp{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
 .mgrp a{color:var(--mut);text-decoration:none;font-size:14px;padding:4px 2px}
 .mgrp a.mg{flex-basis:100%;color:var(--ink);font-weight:700;display:flex;gap:8px;align-items:center}

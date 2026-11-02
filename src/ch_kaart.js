@@ -78,7 +78,7 @@ function instCover(vid, INST) {
   return { known: EI.length, found: found.length, missing: EI.filter(e => !found.includes(e)).map(e => e.n), unverified: INST.filter(q => !q.ok).map(q => q.n) };
 }
 /* ---------- ühistransport: üks arvutus kaardile, graafikule, tabelile, detailipaneelile ja ekspordile ---------- */
-const hrLab = h => h < 24 ? String(h).padStart(2, "0") + ":00" : String(h - 24).padStart(2, "0") + ":00 (+1)";
+const hrLab = h => h <= 24 ? String(h).padStart(2, "0") + ":00" : String(h - 24).padStart(2, "0") + ":00 (+1)";
 const winTxt = () => YT.from === 0 && YT.to >= 28 ? "kogu teenusepäev" : `${hrLab(YT.from)}–${hrLab(YT.to)}`;
 const modeTxt = () => YT.bus && YT.rail ? "buss ja rong" : YT.bus ? "ainult buss" : YT.rail ? "ainult rong" : "liik valimata";
 function ytDest(T) { /* sihtkoha peatused (Set) või null = kõik väljumised */
@@ -444,7 +444,7 @@ function buildMap(c) {
   }
   /* ---------- töö- ja koolipäeva ühenduse kontroll (otseühendused) ---------- */
   function checkPanel() {
-    const P0 = PL.find(p => p.full === YT.od) || (MAP.sel && MAP.sel.kind === "asula" && PL.find(p => p.n === MAP.sel.id)) || PL.find(p => yrOf(p).o.O.size) || PL[0]; YT.od = P0 ? P0.full : null;
+    const P0 = PL.find(p => p.full === YT.od) || (MAP.sel && MAP.sel.kind === "asula" && PL.find(p => p.n === MAP.sel.id)) || PL.find(p => p.full === T.meta.centre) || PL.find(p => yrOf(p).o.O.size) || PL[0]; YT.od = P0 ? P0.full : null;
     const dOpts = [["tln", "Tallinna kesklinn (2,5 km Vabaduse väljakust)"], ["keskus", "vallakeskus (" + T.meta.centre + ")"]].concat(PL.filter(p => p.full !== YT.od).map(p => ["a:" + p.full, p.full]));
     if (!dOpts.some(d => d[0] === YT.odDest)) YT.odDest = "tln";
     return `<div class="panel" id="ckPanel">${ttl("Töö- ja koolipäeva ühenduse kontroll", "Kas valitud asulast jõuab sihtkohta õigeks ajaks ja samal päeval tagasi?")}

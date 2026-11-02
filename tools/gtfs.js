@@ -425,7 +425,7 @@ async function download(feed, dir) {
   if (!r.ok) throw new Error(`${feed.url}: HTTP ${r.status}`);
   const buf = Buffer.from(await r.arrayBuffer());
   fs.mkdirSync(dir, { recursive: true }); const zip = path.join(dir, "feed.zip"); fs.writeFileSync(zip, buf);
-  execFileSync("unzip", ["-o", "-q", zip, "-d", dir]);
+  try { execFileSync("unzip", ["-o", "-q", zip, "-d", dir]); } catch (e) { execFileSync("tar", ["-xf", zip, "-C", dir]); } // Windowsis unzip puudub, tar (bsdtar) pakib zip-i lahti
   return { url: feed.url, lastModified: r.headers.get("last-modified") ? new Date(r.headers.get("last-modified")).toISOString() : null, fetched: new Date().toISOString(), bytes: buf.length };
 }
 
