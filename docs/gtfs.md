@@ -4,7 +4,7 @@ Fail `data/transit/<vald>.json` (Kohila, Rae, Rapla, Marjamaa, Kehtna) tehakse t
 
 ## Allikad
 - Transpordiameti GTFS-sõiduplaanid (Remix): `https://eu-gtfs.remix.com/raplamaa.zip`, `harjumaa.zip`, `elron.zip`, `tallinn.zip`. Iga voo kohta on `meta.feeds` all URL, HTTP Last-Modified, allalaadimise aeg, `feed_info` (kui olemas) ja kehtivus (vähim algus / suurim lõpp üle `calendar` ja `calendar_dates`).
-- Valla piir ja asustusüksused: OpenStreetMap (`data/map/<vald>.json`). Peatus kuulub valda ja asulasse punkt-polügoonis-testi järgi. Asula võti = nimi ilma sõnadeta alev/alevik/küla/linn (Hageri alevik + Hageri küla → „Hageri”).
+- Valla piir ja asustusüksused: OpenStreetMap (`data/map/<vald>.json`). Peatus kuulub valda ja asulasse punkt-polügoonis-testi järgi (paaris-paaritu reegel; ühise piiri peal olev peatus satub täpselt ühte polügooni). Asula võti = OSM-i täisnimi (skeem 2, 02.11.2026; varem nimi ilma sõnadeta alev/alevik/küla/linn, mistõttu Hageri alevik ja Hageri küla, Hagudi ja Kaerepere said ühise võtme). Kui peatus on mitme asula polügoonis, võetakse esimene ja lisatakse hoiatus (Raes Lilleoru).
 
 ## Mõisted
 - **Väljumine (`dep`)** – peatumine valla peatuses, millele samas reisis järgneb veel peatus ja kus pealeminek pole keelatud. Reisi viimane peatus ei ole väljumine. Asula `dep` = selle peatuste väljumiste summa.
@@ -34,3 +34,12 @@ Fail `data/transit/<vald>.json` (Kohila, Rae, Rapla, Marjamaa, Kehtna) tehakse t
 - Ilma kellaajata peatumisi (mitte-ajapunktid) ei kasutata ega interpoleerita; nende arv on hoiatustes.
 - Liinikujud on lihtsustatud (~10 m) ja lõigatud valla piirikast + ~3 km ulatusse.
 - Asulapolügoonid on OSM-ist; peatus, mis ei jää ühtegi polügooni, loeb ainult valla tasemel (`asula: null`).
+
+## Skeem 2 (02.11.2026)
+- `trips` = reisimustrid: `r` liin, `d` `direction_id`, `h` `trip_headsign`, `s` lame massiiv `[peatuse indeks, saabumine min, väljumine min, lipud, …]`. Lipp 1 = pealeminek ei ole võimalik (pickup_type=1 või reisi viimane peatus), 2 = mahaminek ei ole võimalik. Minutid teenusepäeva algusest (24:15 = 1455). Tallinna kesklinna peatused on reisis üks sündmus indeksiga −1.
+- `days[D].t` = sel päeval sõitvate reiside indeksid (duplikaadid eemaldatud). `days[D].stop` eemaldati: peatuse arvud arvutatakse reisidest.
+- `stops[].out = true`: peatus kuni ~3 km valla piirikastist väljas, ainult valda teenindavatelt reisidelt (`vald` = teise valla nimi või null). Asula on ainult valla piires oleval peatusel.
+- `meta.centre`, `meta.zones`, `meta.kylad` (asula, EHAK-kood kui OSM-is olemas, peatuste arv).
+- Liides arvutab kõik ühistranspordi arvud funktsiooniga `Logic.ytConns` (+ `ytStats`, `gapMax`, `ytStopCounts`, `dayCheck`); `tests/content.test.js` kontrollib, et tulemus võrdub `days.asula` koondväärtustega.
+- Kaks meetodit: **A** = peatus asula territooriumil (polügoon), **B** = peatus otsinguraadiuses asula sildipunktist (linnulend, mitte kõnniteekond ega teenindusala). Iga reis loetakse üks kord, ka mitme peatusega.
+- Sihtkohaga (Tallinna kesklinn, vallakeskus, teine asula) loetakse ainult otseühendused; suurim paus = suurim vahe järjestikuste selle suuna väljumiste vahel valitud ajavahemikus (vahemiku algust/lõppu ega vastassuunda ei arvestata).

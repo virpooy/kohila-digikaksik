@@ -33,6 +33,17 @@ const near = (a, b, t = 1e-9) => Math.abs(a - b) <= t * Math.max(1, Math.abs(a),
     });
     ok(!e1 && !e2 && !e3, `GTFS ${f}: tunnijaotuse summa = reiside arv (kaart, graafik ja tabel samast väärtusest); reise ≤ väljumisi`, `${e1}/${e2}/${e3}`);
     ok(t.meta.dates.every(d => t.meta.dayInfo[d]) && t.meta.feeds.every(x => x.validFrom && x.validTo && x.fetched), `GTFS ${f}: analüüsipäev, kehtivus ja hankimise aeg on eraldi väljad`);
+    if (t.schema >= 2) {
+      /* kaart, graafik, tabel ja detailipaneel kasutavad Logic.ytConns'i: see peab andma samad arvud mis töötluse koondväärtused */
+      let b1 = 0, b2 = 0, b3 = 0; const M = R("data/map/" + f);
+      Object.entries(t.days).forEach(([d, day]) => Object.entries(day.asula).forEach(([k, a]) => {
+        const c = L.ytConns(t, d, L.stopsInAsula(t, k), null); if (c.list.length !== a.trips || c.ev.length !== a.dep) b1++;
+        const s = L.ytStats(c, 0, 28); if (s.win !== s.day || s.bus.reduce((x, y) => x + y, 0) + s.rail.reduce((x, y) => x + y, 0) !== s.day) b2++; }));
+      ok(!b1 && !b2, `GTFS ${f}: reisipõhine arvutus = koondväärtused; kogu teenusepäev = päeva summa (südaööd ületavad ajad kaasa arvatud)`, `${b1}/${b2}`);
+      const keys = new Set(M.kylad.map(k => k.n)); t.stops.forEach(s => { if (s.asula && !keys.has(s.asula)) b3++; });
+      ok(!b3 && Object.keys(t.days[t.meta.dates[0]].asula).every(k => keys.has(k)), `GTFS ${f}: asula võti = OSM-i täisnimi (alevik ja küla eraldi)`, b3);
+      ok(t.stops.filter(s => s.out).every(s => !s.asula), `GTFS ${f}: piirivälisel peatusel ei ole valla asulat`);
+    }
   });
 }
 

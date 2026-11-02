@@ -104,7 +104,7 @@ async function vald(id, name) {
     if (t.boundary === "administrative" && t.name) {
       const P2 = polys(e); if (!P2) continue; const r = P2.outer.sort((a, b) => ringArea(b, k) - ringArea(a, k))[0], lp = labelPt(r, k);
       if (!inV(lp) || ringArea(r, k) > 0.9 * outer.reduce((s, q) => s + ringArea(q, k), 0)) continue;
-      out.kylad.push({ n: t.name, lvl: +t.admin_level, kind: t["designation"] || t["place"] || "", p: [r5(lp[0]), r5(lp[1])], rings: P2.outer.map(q => flat(dp(q, 12, k))) });
+      out.kylad.push({ n: t.name, lvl: +t.admin_level, kind: t["designation"] || t["place"] || "", ehak: t["ref:ehak"] || t["EHAK:code"] || null, p: [r5(lp[0]), r5(lp[1])], rings: P2.outer.map(q => flat(dp(q, 12, k))) });
     }
   }
   /* kui eri tasemetel on sama nimega piir, jäta madalaim tase */

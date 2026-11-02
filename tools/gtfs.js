@@ -156,7 +156,7 @@ function loadFeed(dir, name) {
   for (const r of readCsv(path.join(dir, "routes.txt")) || [])
     f.routes.set(r.route_id, { s: r.route_short_name || null, l: r.route_long_name || null, m: modeOf(r.route_type), type: r.route_type, op: (r.agency_id ? f.agencies.get(r.agency_id) : firstAg) || null });
   for (const t of readCsv(path.join(dir, "trips.txt")) || [])
-    f.trips.set(t.trip_id, { route: t.route_id, svc: t.service_id, shape: t.shape_id || null });
+    f.trips.set(t.trip_id, { route: t.route_id, svc: t.service_id, shape: t.shape_id || null, dir: t.direction_id === "0" || t.direction_id === "1" ? +t.direction_id : null, hs: t.trip_headsign || null });
   for (const c of readCsv(path.join(dir, "calendar.txt")) || [])
     f.calendar.set(c.service_id, { start: c.start_date, end: c.end_date, days: [c.sunday, c.monday, c.tuesday, c.wednesday, c.thursday, c.friday, c.saturday].map((x) => x === "1") });
   f.exByDate = new Map();
@@ -180,27 +180,34 @@ function loadFeed(dir, name) {
 function classifyStops(feeds, maps, centres) {
   const geo = Object.entries(maps).map(([id, m]) => ({
     id, outline: m.outline, ob: ringsBbox(m.outline),
-    kylad: m.kylad.map((k) => ({ n: k.n, key: asulaKey(k.n), rings: k.rings, b: ringsBbox(k.rings) })),
+    kylad: m.kylad.map((k) => ({ n: k.n, key: k.n, rings: k.rings, b: ringsBbox(k.rings) })),
   }));
+  const near = Object.entries(maps).map(([id, m]) => [id, bufferBbox(m)]);
   for (const f of feeds) for (const s of f.stops) {
-    s.muni = null; s.asula = null; s.asulaName = null; s.tln = false; s.centre = false;
+    s.muni = null; s.asula = null; s.asulaName = null; s.tln = false; s.centre = false; s.near = [];
     if (s.lat == null) continue;
     s.tln = distM(s.lat, s.lon, TLN.lat, TLN.lon) <= TLN.r;
+    s.near = near.filter(([, b]) => inBbox(s.lon, s.lat, b)).map(([id]) => id);
     for (const g of geo) {
       if (!inBbox(s.lon, s.lat, g.ob) || !pointInRings(s.lon, s.lat, g.outline)) continue;
       s.muni = g.id;
-      for (const k of g.kylad) if (inBbox(s.lon, s.lat, k.b) && pointInRings(s.lon, s.lat, k.rings)) { s.asula = k.key; s.asulaName = k.n; break; }
+      // Asula võti = OSM-i täisnimi (Hageri alevik ≠ Hageri küla). Kattuvate polügoonide korral võetakse esimene (tähestiku järgi); kattumised loetakse hoiatusse.
+      const hits = g.kylad.filter((k) => inBbox(s.lon, s.lat, k.b) && pointInRings(s.lon, s.lat, k.rings));
+      if (hits.length) { s.asula = hits[0].key; s.asulaName = hits[0].n; }
+      if (hits.length > 1) s.overlap = hits.map((k) => k.n);
       s.centre = s.asulaName === centres[g.id];
       break;
     }
   }
 }
+/** Valla piirikast + ~3 km (lähiümbruse peatused ja liinikujud). */
+function bufferBbox(m) { const b0 = m.bbox || ringsBbox(m.outline); return [b0[0] - 0.052, b0[1] - 0.027, b0[2] + 0.052, b0[3] + 0.027]; }
 
 /** Kaks läbimist üle stop_times: 1) vallaga seotud reisid, 2) nende reiside kõik peatumised. */
 async function loadStopTimes(f, warn) {
   const file = path.join(f.dir, "stop_times.txt");
   const touch = new Set();
-  await streamCsv(file, (v, h) => { const si = f.stopIdx.get(v[h.stop_id]); if (si !== undefined && f.stops[si].muni) touch.add(v[h.trip_id]); });
+  await streamCsv(file, (v, h) => { const si = f.stopIdx.get(v[h.stop_id]); if (si !== undefined && (f.stops[si].muni || f.stops[si].near.length)) touch.add(v[h.trip_id]); });
   const rows = new Map(); let noTime = 0;
   await streamCsv(file, (v, h) => {
     const tid = v[h.trip_id]; if (!touch.has(tid)) return;
@@ -279,33 +286,35 @@ function finishAgg(a, mode, isCentre) {
 /** Ühe valla väljundfail. ctx = { feeds, maps, centres, dates, built, feedMeta, warnings, dupes } */
 function buildMunicipality(ctx, muni) {
   const { feeds, dates } = ctx; const map = ctx.maps[muni];
-  const centreKey = asulaKey(ctx.centres[muni]);
-  const b0 = map.bbox || ringsBbox(map.outline);
-  const bb = [b0[0] - 0.052, b0[1] - 0.027, b0[2] + 0.052, b0[3] + 0.027]; // ~3 km
+  const centreKey = ctx.centres[muni];
+  const bb = bufferBbox(map); // ~3 km
   const stopsOut = new Map(), routes = {}, routeShapes = {}, shapes = {}, days = {};
-  const asulaKeys = [...new Set(map.kylad.map((k) => asulaKey(k.n)))].sort((a, b) => a.localeCompare(b, "et"));
-  for (const f of feeds) for (const s of f.stops) if (s.muni === muni) stopsOut.set(s.id, { id: s.id, n: s.n, ll: [+s.lat.toFixed(5), +s.lon.toFixed(5)], asula: s.asula, modes: new Set() });
-  const dupes = {};
+  const asulaKeys = [...new Set(map.kylad.map((k) => k.n))].sort((a, b) => a.localeCompare(b, "et"));
+  const inReg = (s) => s.lat != null && (s.muni === muni || s.near.includes(muni));
+  for (const f of feeds) for (const s of f.stops) if (inReg(s)) stopsOut.set(s.id, { id: s.id, n: s.n, ll: [+s.lat.toFixed(5), +s.lon.toFixed(5)], asula: s.muni === muni ? s.asula : null, ...(s.muni !== muni ? { out: true, vald: s.muni } : {}), ...(s.muni === muni && s.overlap ? { overlap: s.overlap } : {}), modes: new Set() });
+  const dupes = {}; const pat = new Map(); // reisimustrid: gTid → { r, d, h, rows, f }
   for (const date of dates) {
-    const stopAgg = new Map(); const asula = new Map(asulaKeys.map((k) => [k, emptyAgg()])); const vald = emptyAgg();
+    const asula = new Map(asulaKeys.map((k) => [k, emptyAgg()])); const vald = emptyAgg(); const active = [];
     const seen = new Map(); // dubleeritud reiside tuvastus eri voogude vahel
     for (const f of feeds) for (const [tid, rows] of f.tripRows) {
       const t = f.trips.get(tid); if (!t || !serviceActive(f, t.svc, date)) continue;
       const route = f.routes.get(t.route); const mode = route ? route.m : null;
-      const evs = tripEvents(rows, f.stops, muni); if (!evs.length) continue;
+      // ainult reisid, mis peatuvad vallas; piirivälised peatused tulevad nende reiside kaudu (mitte nt Tallinna linnaliinid, mis valda ei sisene)
+      if (!rows.some((r) => f.stops[r.si].muni === muni && r.dep != null)) continue;
+      const reg = rows.filter((r) => inReg(f.stops[r.si]) && r.dep != null);
+      const evs = tripEvents(rows, f.stops, muni);
       if (!mode) { ctx.warnings.add(`${f.name}: liini ${t.route} route_type ${route ? route.type : "?"} ei ole buss ega rong; jäetud välja.`); continue; }
-      const sig = mode + "|" + (route.s || "") + "|" + evs.map((e) => e.r.dep + "@" + e.s.n).join(",");
+      const sig = mode + "|" + (route.s || "") + "|" + reg.map((r) => r.dep + "@" + f.stops[r.si].n).join(",");
       const prev = seen.get(sig); if (prev && prev !== f.name) { dupes[f.name] = (dupes[f.name] || 0) + 1; continue; }
       seen.set(sig, f.name);
       const gTid = f.name + ":" + tid, gRid = f.name + ":" + t.route;
       if (!routes[gRid]) routes[gRid] = { s: route.s, l: route.l, m: mode, op: route.op };
+      if (!pat.has(gTid)) pat.set(gTid, { r: gRid, d: t.dir, h: t.hs, rows, f });
+      active.push(gTid);
       if (t.shape) { const gS = f.name + ":" + t.shape; const rs = (routeShapes[gRid] = routeShapes[gRid] || []); if (!rs.includes(gS)) rs.push(gS); if (!(gS in shapes)) { const raw = f.shapes && f.shapes.get(t.shape); const c = raw && clipToBbox(raw, bb); shapes[gS] = c ? simplify(c, 10) : null; } }
       // peatused (liik märgitakse ka ainult saabumisega peatustele)
       for (const r of rows) { const so = stopsOut.get(f.stops[r.si].id); if (so) so.modes.add(mode); }
-      for (const e of evs) {
-        let a = stopAgg.get(e.s.id); if (!a) stopAgg.set(e.s.id, (a = { dep: 0, h: new Array(24).fill(0), hr: new Array(24).fill(0), routes: new Set(), secs: [] }));
-        a.dep++; (mode === "rail" ? a.hr : a.h)[hourOf(e.r.dep)]++; a.routes.add(gRid); a.secs.push(e.r.dep);
-      }
+      if (!evs.length) continue;
       // asulad + vald
       const groups = new Map();
       for (const e of evs) { if (e.s.asula) { let g = groups.get(e.s.asula); if (!g) groups.set(e.s.asula, (g = [])); g.push(e); } }
@@ -327,26 +336,52 @@ function buildMunicipality(ctx, muni) {
         vald.ret.add(gTid);
       }
     }
-    const dStop = {};
-    for (const [id, a] of stopAgg) {
-      const so = a.secs.slice().sort((p, q) => p - q); const md = stopsOut.get(id).modes;
-      dStop[id] = { dep: a.dep, h: md.has("bus") ? a.h : undefined, hr: md.has("rail") ? a.hr : undefined, routes: [...a.routes].sort(), first: fmt(so[0]), last: fmt(so[so.length - 1]), gapMax: gapMaxMin(a.secs) };
-    }
     const dAs = {}; for (const [k, a] of asula) dAs[k] = finishAgg(a, null, k === centreKey);
-    days[date] = { stop: dStop, asula: dAs, vald: finishAgg(vald, null, false) };
+    days[date] = { asula: dAs, vald: finishAgg(vald, null, false), t: active };
   }
   ctx.dupes[muni] = dupes;
   // ainult peatused, kus perioodil peatub mõni reis (vood sisaldavad kogu riikliku peatuseregistri)
   const stops = [...stopsOut.values()].filter((s) => s.modes.size).map((s) => ({ ...s, modes: [...s.modes].sort() }));
+  const sIdx = new Map(stops.map((s, i) => [s.id, i]));
+  // reisimustrid: piirkonna peatumised + Tallinna kesklinna tsoon (indeks −1) ühe sündmusena
+  const tripIds = [...pat.keys()].sort(), tIdx = new Map(tripIds.map((id, i) => [id, i]));
+  const trips = tripIds.map((id) => { const p = pat.get(id); return { id, r: p.r, d: p.d, h: p.h, s: tripStops(p.rows, p.f.stops, (s) => sIdx.get(s.id)) }; });
+  for (const d of dates) days[d].t = days[d].t.map((id) => tIdx.get(id)).sort((a, b) => a - b);
   for (const k of Object.keys(shapes)) if (shapes[k] == null) { delete shapes[k]; for (const r of Object.values(routeShapes)) { const i = r.indexOf(k); if (i >= 0) r.splice(i, 1); } }
   const dayInfo = {}; for (const d of dates) dayInfo[d] = { wd: WD[weekday(d)], exceptions: feeds.reduce((s, f) => s + (f.exByDate.get(compact(d)) || 0), 0) };
+  const kylad = map.kylad.map((k) => ({ n: k.n, ...(k.ehak ? { ehak: k.ehak } : {}), stops: stops.filter((s) => s.asula === k.n).length }));
+  const overlaps = stops.filter((s) => s.overlap).map((s) => `${s.n}: ${s.overlap.join(" / ")}`);
+  if (overlaps.length) ctx.warnings.add(`${muni}: peatus mitme asula polügoonis (võetud esimene): ${overlaps.join("; ")}`);
   return {
-    _doc: DOC(muni, ctx.centres[muni]), schema: 1,
-    meta: { built: ctx.built, vald: muni, feeds: ctx.feedMeta, dates, dayInfo,
+    _doc: DOC(muni, ctx.centres[muni]), schema: 2,
+    meta: { built: ctx.built, vald: muni, feeds: ctx.feedMeta, dates, dayInfo, centre: centreKey, region: bb.map((x) => +x.toFixed(5)),
+      zones: [{ id: -1, k: "tln", n: "Tallinna kesklinn", ll: [TLN.lat, TLN.lon], r: TLN.r }],
       dest: { tln: `Tallinna kesklinn: peatused kuni ${TLN.r / 1000} km Vabaduse väljakust (${TLN.lat}, ${TLN.lon}).`, keskus: `Vallakeskus: peatused OSM-i asustusüksuse „${ctx.centres[muni]}” polügoonis.` },
-      dupTrips: dupes, warnings: [...ctx.warnings] },
-    stops, routes, shapes, routeShapes, days,
+      kylad, dupTrips: dupes, warnings: [...ctx.warnings] },
+    stops, routes, shapes, routeShapes, trips, days,
   };
+}
+/** Reisi peatumised kompaktselt: [peatuse indeks, saabumine min, väljumine min, lipud, …]. Lipud: 1 = pealeminek ei ole võimalik
+ *  (pickup_type=1 või reisi viimane peatus), 2 = mahaminek ei ole võimalik (drop_off_type=1 või reisi esimene peatus).
+ *  Minutid teenusepäeva algusest (võivad ületada 1440, nt 25:10 = 1510). Järjestikused Tallinna kesklinna peatused = üks sündmus
+ *  indeksiga −1: saabumine = esimene saabumine tsooni (mahaminek lubatud), väljumine = viimane väljumine tsoonist (pealeminek lubatud). */
+function tripStops(rows, stops, idxOf) {
+  const out = []; const last = rows.length - 1; let z = null;
+  const flush = () => { if (z && (z.arr != null || z.dep != null)) out.push(-1, z.arr, z.dep, (z.dep == null ? 1 : 0) | (z.arr == null ? 2 : 0)); z = null; };  rows.forEach((r, i) => {
+    if (r.arr == null && r.dep == null) return;
+    const s = stops[r.si], noPu = r.pu === "1" || i === last, noDo = r.dr === "1" || i === 0;
+    if (s.tln) {
+      if (!z) z = { arr: null, dep: null };
+      if (!noDo && z.arr == null) z.arr = Math.floor(r.arr / 60);
+      if (!noPu) z.dep = Math.floor(r.dep / 60);
+      return;
+    }
+    flush();
+    const k = idxOf(s); if (k === undefined) return;
+    out.push(k, Math.floor(r.arr / 60), Math.floor(r.dep / 60), (noPu ? 1 : 0) | (noDo ? 2 : 0));
+  });
+  flush();
+  return out;
 }
 function DOC(muni, centre) {
   return `${muni} valla ühistransport GTFS-sõiduplaanide järgi (Transpordiamet/Remix). ` +
@@ -357,8 +392,9 @@ function DOC(muni, centre) {
     "tln/keskus = otseühendused (sama reis, hilisem peatus, ümberistumiseta): trips = reiside arv, firstArr = varaseim saabumine, minMin = lühim sõiduaeg minutites asula viimasest väljumispeatusest esimese sihtpeatuseni, am7_9 = saabumised 07:00–08:59. " +
     `Vallakeskus = ${centre}; keskusasula enda keskus/kool = null. Valla tasemel arvestatakse keskusesse sõitu keskusest väljaspool asuvatest peatustest. ` +
     "kool.arrBy0815 = hiliseim otsesaabumine keskusesse kell 08:15 või varem, kool.arrFirst = varaseim selline saabumine (null, kui sellist ei ole); kool.ret = reisid keskusest 13:00–17:59, mis peatuvad hiljem selles asulas. " +
-    "stops = ainult peatused, kus perioodil peatub mõni reis. Peatuse päevaandmetes on h ainult bussipeatusel ja hr ainult rongipeatusel (vt stops[].modes). Päeval puuduv peatus days.stop all = sel päeval väljumisi ei ole. Kõik asulad on igas päevas olemas; 0 tähendab, et sõiduplaanis sel päeval väljumisi ei ole. Puuduv/teadmata väärtus = null. " +
-    "Teenus kuupäeval D: calendar nädalapäev ja start≤D≤end, siis calendar_dates 1 lisab, 2 eemaldab. Asula = OSM asustusüksus, võti ilma sõnadeta alev/alevik/küla/linn (nt Hageri alevik ja Hageri küla → Hageri). " +
+    "stops = peatused valla piires ja kuni ~3 km valla piirikastist väljas (out=true, vald = teise valla nimi või null), kus perioodil peatub mõni reis; arvesse lähevad ainult reisid, mis peatuvad ka selles vallas. Asula on ainult valla piires oleval peatusel. Kõik asulad on igas päevas olemas; 0 tähendab, et sõiduplaanis sel päeval väljumisi ei ole. Puuduv/teadmata väärtus = null. " +
+    "trips = reisimustrid (r = liin, d = direction_id, h = trip_headsign, s = lame massiiv [peatuse indeks, saabumine min, väljumine min, lipud]; lipp 1 = pealeminek pole võimalik, 2 = mahaminek pole võimalik; indeks −1 = Tallinna kesklinna tsoon ühe sündmusena); days[D].t = sel päeval sõitvate reiside indeksid (duplikaadid eemaldatud). Minutid on teenusepäeva algusest ja võivad ületada 1440 (25:10 = 1510). " +
+    "Teenus kuupäeval D: calendar nädalapäev ja start≤D≤end, siis calendar_dates 1 lisab, 2 eemaldab. Asula = OSM asustusüksus, võti = täisnimi (Hageri alevik ja Hageri küla on eraldi). " +
     "Kommertsliinid ja tellimusvedu võivad puududa; GTFS ei näita sõitjate arvu, täituvust ega hilinemisi.";
 }
 
@@ -389,7 +425,7 @@ async function download(feed, dir) {
   if (!r.ok) throw new Error(`${feed.url}: HTTP ${r.status}`);
   const buf = Buffer.from(await r.arrayBuffer());
   fs.mkdirSync(dir, { recursive: true }); const zip = path.join(dir, "feed.zip"); fs.writeFileSync(zip, buf);
-  execFileSync("unzip", ["-o", "-q", zip, "-d", dir]);
+  try { execFileSync("unzip", ["-o", "-q", zip, "-d", dir]); } catch (e) { execFileSync("tar", ["-xf", zip, "-C", dir]); } // Windowsis unzip puudub, tar (bsdtar) pakib zip-i lahti
   return { url: feed.url, lastModified: r.headers.get("last-modified") ? new Date(r.headers.get("last-modified")).toISOString() : null, fetched: new Date().toISOString(), bytes: buf.length };
 }
 
@@ -422,5 +458,5 @@ async function main() {
 }
 
 module.exports = { parseCsvLine, readCsv, streamCsv, toSec, fmt, hourOf, gapMaxMin, pointInRings, distM, asulaKey, modeOf, simplify, clipToBbox,
-  serviceActive, feedValidity, pickDates, loadFeed, classifyStops, prepare, buildMunicipality, buildAll, CENTRES, TLN };
+  serviceActive, feedValidity, pickDates, loadFeed, classifyStops, prepare, buildMunicipality, buildAll, tripStops, CENTRES, TLN };
 if (require.main === module) main().catch((e) => { console.error(e); process.exit(1); });

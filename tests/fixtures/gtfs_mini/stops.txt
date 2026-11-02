@@ -6,3 +6,7 @@ B1,Bküla,59.17,24.15,0
 T1,Vabaduse väljak,59.434,24.745,0
 U1,Kasutamata,59.18,24.18,0
 C1,Cküla,59.12,24.07,0
+A3,Aküla alevik,59.12,24.15,0
+O1,Väljas,58.99,24.15,0
+T2,Kesklinn 2,59.436,24.75,0
+E1,Piiril,59.1,24.15,0
