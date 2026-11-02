@@ -1,5 +1,5 @@
 /* Mootori testid (CI: node engine.test.js)
- * 1) selfTest T1–T18: võrdlus põhimudeliga (data/reference.json) ja sisemine kooskõla.
+ * 1) selfTest T1–T19: võrdlus põhimudeliga (data/reference.json) ja sisemine kooskõla.
  * 2) Pariteeditest: mootor annab samad tulemused mis 2.2.0 (tests/parity.test.js).
  * Väljumiskood 1, kui mõni test ebaõnnestub. */
 "use strict";

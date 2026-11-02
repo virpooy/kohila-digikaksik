@@ -33,6 +33,9 @@
  *           dNet = dTaxR − dTf − dCost ja nimetab tasandusfondi kao eraldi.
  *           Pensioniosa (tulumaks) ja enesetesti pilootvallad ei ole enam
  *           koodis nimeliselt kirjas, vaid tuletatakse andmetest.
+ *  - 3.0.1  Tulumaksu 2026 hinnang: kuude arv tuleb MTA andmetest (tm26 pikkus),
+ *           mitte fikseeritud 9-st, et kuine andmeuuendus ei liidaks hinnangusse
+ *           13 kuud. 9 kuu andmetega on tulemus sama (pariteet); enesetest T19.
  */
 (function (root) {
   "use strict";
@@ -41,7 +44,7 @@
    * 1. KONSTANDID
    * ======================================================================== */
 
-  const VERSION = "3.0.0 (01.11.2026)";
+  const VERSION = "3.0.1 (02.11.2026)";
 
   /** Viieaastaste vanuserühmade arv (0–4 … 85+). */
   const G = 18;
@@ -67,11 +70,9 @@
   /** Rahvastikuandmete aegrea esimene aasta (pop.b, pop.d, pop.mi, pop.mo indeks 0). */
   const FIRST_DATA_YEAR = 2015;
 
-  /** Maksu- ja Tolliameti kuuandmete aasta ning kuude arv, mille järgi arvutatakse
-   *  aasta kasvutempo (2026 jaanuar–september vs 2025 sama periood).
-   *  NB: 2.2.0 käitumine – kuude arv on fikseeritud (9), mitte tm26.length. */
+  /** Maksu- ja Tolliameti kuuandmete aasta. Kasvutempo arvutatakse 2026. aasta
+   *  olemasolevatest kuudest (tm26 pikkus) vs 2025 sama periood (3.0.1). */
   const TAX_YEAR = 2026;
-  const MTA_MONTHS = 9;
 
   /** Elamuarenduse vaikeväärtused, kui kov.json params.housing puudub (otsused E2–E4).
    *  hh = elanikke eluruumi kohta, kids = laste kordaja eluruumi kohta,
@@ -567,7 +568,7 @@
 
   /**
    * buildTax(ctx) → { T, PSHARE, PJUMP27 }
-   * T[id] = 2026. aasta laekumise hinnang: MTA kuuandmetest (9 kuu kasvutempo × 2025
+   * T[id] = 2026. aasta laekumise hinnang: MTA kuuandmetest (olemasolevate kuude kasvutempo × 2025
    * ülejäänud kuud) või RR300 2025 × MTA valdade keskmine kasvutempo.
    * PSHARE[id] = pensioniosa tulumaksust: 2026. a eelarvest (b26.pens/b26.tax) või
    * eelarvestrateegia 2026. aasta veerust (pens/tax); muidu 65+ elanike arvu järgi
@@ -582,10 +583,11 @@
     // 2026 laekumine MTA kuuandmetest
     const withMta = Object.keys(MTA.tm26);
     withMta.forEach(id => {
+      const months = MTA.tm26[id].length;
       const js26 = sum(MTA.tm26[id]);
-      const js25 = sum(MTA.tm25[id].slice(0, MTA_MONTHS));
+      const js25 = sum(MTA.tm25[id].slice(0, months));
       const g = js26 / js25;
-      const estimate = MTA.tm26[id].concat(MTA.tm25[id].slice(MTA_MONTHS).map(x => x * g));
+      const estimate = MTA.tm26[id].concat(MTA.tm25[id].slice(months).map(x => x * g));
       T[id] = { g, js26, js25, est26: sum(estimate), src: "MTA kuuandmed" };
     });
     const gAvg = sum(withMta.map(id => T[id].js26)) / sum(withMta.map(id => T[id].js25));
@@ -1284,7 +1286,7 @@
 
   /**
    * selfTest(ctx, ref) → [{ id, name, ok, detail }]
-   * T1–T6b: võrdlus põhimudeliga (reference.json); T7–T18: sisemine kooskõla.
+   * T1–T6b: võrdlus põhimudeliga (reference.json); T7–T19: sisemine kooskõla.
    * Testitavad üksused tuletatakse andmetest: agregaat = esimene kov.json agregaat,
    * pilootvald agregaadis (pilot) ja pilootvald väljaspool agregaati.
    */
@@ -1478,6 +1480,19 @@
         goal && Math.abs(goal.sel - pop2035) < 1e-9 && aggGoal && Math.abs(aggGoal.sel - aggPop2035) < 1e-9 && goal.n === 5,
         goal ? pilotInName + " " + fmt(goal.sel) + " / " + fmt(goal.v) + " (" + Math.round(goal.share * 100) + "% sihist), "
           + goal.meet + "/" + goal.n + " mustrit" : "eesmärk puudub");
+    }
+
+    // T19: tulumaksu hinnang kunstliku lisakuuga (kuine MTA uuendus)
+    {
+      const fin = ctx.data.fin, id = Object.keys(fin.MTA.tm26)[0];
+      const tm26 = fin.MTA.tm26[id], tm25 = fin.MTA.tm25[id], n = tm26.length + 1;
+      const tm26x = tm26.concat([tm25[n - 1]]);
+      const T = buildTax({ ...ctx, data: { ...ctx.data, fin: { ...fin, MTA: { ...fin.MTA, tm26: { ...fin.MTA.tm26, [id]: tm26x } } } } }).T[id];
+      const g = sum(tm26x) / sum(tm25.slice(0, n));
+      const months = tm26x.concat(tm25.slice(n).map(x => x * g));
+      check("T19", "Tulumaksu hinnang: lisandunud kuu korral koosneb 2026. aasta hinnang 12 kuust (" + n + " kuud 2026 + " + (12 - n) + " kuud 2025 × kasvutempo)",
+        tm25.length === 12 && months.length === 12 && Math.abs(T.est26 - sum(months)) < 1e-6 && Math.abs(T.g - g) < 1e-12,
+        id + ": " + months.length + " kuud, hinnang " + fmt(T.est26) + " €");
     }
     return results;
   }
