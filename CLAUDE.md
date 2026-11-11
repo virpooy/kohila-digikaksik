@@ -31,7 +31,7 @@ Kohila ja Rae valla (ning Raplamaa valdade) digitaalne kaksik: deterministlik ar
 | `src/shell.html` | Lehe karkass, kohatäitjad `/*__CSS__*/`, `/*__ENGINE__*/`, `/*__APP__*/`. |
 | `src/app.css` | k9 visuaalsüsteem, tume ja hele teema, kaardi värvid (`--m-*`). |
 | `src/core.js` | Olek `S` (vald, rändemuster, lisaränne, sündimus, aasta), andmete laadimine, vorming, `ttl/more/meta/table/use`, CSV ja `dlText`, hõpikvihje, joonised `timeChart`, `bars`, `waterfall`, `goalRows`, `stack`, `heat`. |
-| `src/logic.js` | **Puhtad UI-arvutused** (Node'is testitav): `dpStatus`, `eduReserve`, `stress`, `capState`, `budgetSens`, `budgetTotals`, `commuteRows`, `haversine/nearest`, `inWindow`, stsenaariumi eksport/import, URL-i olek. Uus koondamis- või kontrolliloogika läheb siia, mitte DOM-koodi. |
+| `src/logic.js` | **Puhtad UI-arvutused** (Node'is testitav): `dpStatus`, `eduReserve`, `stress`, `capState`, `budgetSens`, `budgetTotals`, `commuteRows`, `haversine/nearest`, `inWindow`, ühistransport `ytConns/ytStats/ytStopCounts/gapMax/dayCheck`, stsenaariumi eksport/import, URL-i olek. Uus koondamis- või kontrolliloogika läheb siia, mitte DOM-koodi. |
 | `src/sources.js` | Allikakataloog `SRC`, päritolumärgised `PROV`, ⓘ-dialoog. |
 | `src/ch_otsus.js` | Ülevaade (lühivaade, andmete kindlus, kuidas lugeda), eesmärgid, rahvastik, asulad, kohad, investeering ja võlg. |
 | `src/ch_plan.js` | Planeeringud, arenduse kalkulaator, eelarveplokk, stsenaariumide töölaud + eksport, otsuse eelhinnang + seletuskiri, „Küsi kaksikult”. |
@@ -41,7 +41,7 @@ Kohila ja Rae valla (ning Raplamaa valdade) digitaalne kaksik: deterministlik ar
 | `build.py` | Paneb `src/` + `engine.js` kokku → `index.html` (gitis ignoreeritud). **Uus `src/*.js` tuleb lisada `APP` loendisse** (järjekord loeb: core, logic, sources, peatükid, main). |
 | `data/` | vt „Andmefailid” allpool. |
 | `tools/` | `update_open_data.js` (kuine MTA + RR302), `osm_kaart.js` (OSM kaardikihid), `gtfs.js` (ühistransport), `rak_reference.js` (põhimudeli referents), `pk_export.py` (planeeringukontrolli eksport), `import_vald.py` (valla koondandmed), `rae_andmed.js`, `uuring/` (ühekordsed päringud). |
-| `tests/` | `parity.test.js` + `golden_v2.json` + `engine_v2_2_0.js` (mootori 2.2.0 oraakel), `content.test.js` (51 sisulist kontrolli), `gtfs.test.js` + `fixtures/gtfs_mini`, `ui/smoke.js` (Playwright), `index_v2.src.html` (vana liides, ainult ajaloo jaoks). |
+| `tests/` | `parity.test.js` + `golden_v2.json` + `engine_v2_2_0.js` (mootori 2.2.0 oraakel), `content.test.js` (sisulised kontrollid), `gtfs.test.js` + `fixtures/gtfs_mini`, `ui/smoke.js` (Playwright), `index_v2.src.html` (vana liides, ainult ajaloo jaoks). |
 | `planeeringukontroll/` | Planeeringukontrolli artefakti lähtekood, audit ja testid (eraldi rakendus). |
 | `docs/` | `uleandmine.md` (seis ja ülesanded), `otsused.md` (otsuste logi), `mootor-3.md`, `gtfs.md`, `taiendus-2026-11.md`, `vordlus.md` (E1–E10), `magistritoo-soovitused.md`, `uuringud/tekst-ja-graafika.md` (P1–P18), `kaardistus/`, `andmed/`. |
 
@@ -53,7 +53,7 @@ Kohila ja Rae valla (ning Raplamaa valdade) digitaalne kaksik: deterministlik ar
 | `pop.json`, `ext.json`, `fin.json`, `edu.json`, `settlements.json`, `peers.json` | rahvastik, ränne, eelarve/MTA, haridus, asulad (REL 2021) | `andmed.yml` (MTA, RR302) kord kuus; ülejäänu käsitsi |
 | `commute.json` | REL 2021 RL21163 töökoha asukoha kategooriad, 5 valda | ühekordne (`tools/uuring/pendel.js`) |
 | `map/<vald>.json`, `map/region.json` | OSM: piirid, külad, teed, raudtee, vesi, maakate, haridusasutused; Eesti maakonnad ja KOV-id | `kaart.yml` käsitsi |
-| `transit/<vald>.json` | GTFS: peatused, liinid, geomeetria, 14 analüüsipäeva | `yt.yml` käsitsi |
+| `transit/<vald>.json` | GTFS skeem 2: peatused (ka ~3 km piirist väljas), liinid, geomeetria, reisimustrid, 14 analüüsipäeva; asula võti = OSM täisnimi (`docs/gtfs.md`) | `yt.yml` käsitsi; kohalikult `node tools/gtfs.js` (laeb vood) |
 | `transit.json`, `geo.json` | vanad (31.10.2026) ühepäevane ühistranspordi kokkuvõte ja Kohila/Rae kaardikiht – kasutusel varuna | ei uuene |
 | `dp.json` | planeeringukontrolli detailplaneeringud | `tools/pk_export.py` |
 | `reference.json` | põhimudeli väljundid testideks | `tools/rak_reference.js` |
@@ -76,7 +76,7 @@ CI (`.github/workflows/ci.yml`, „Testid ja leht”) käivitab mootori- ja sisu
 ## Iga muudatuse kord
 
 1. **Arvutus**: mootori loogika `engine.js`-i (puhas funktsioon, `API` kirje, enesetest); UI-koondamine `src/logic.js`-i (+ kontroll `tests/content.test.js`-is). Peatükifailid ainult kuvavad.
-2. Kaart, graafik ja tabel kasutavad **sama** funktsiooni ja väärtust (nt `ytAgg`, `popLayer`, `Logic.commuteRows`). Ära arvuta sama näitajat eri vaates erinevalt.
+2. Kaart, graafik ja tabel kasutavad **sama** funktsiooni ja väärtust (nt `Logic.ytConns`/`ytStats`, `popLayer`, `Logic.commuteRows`). Ära arvuta sama näitajat eri vaates erinevalt.
 3. `node engine.test.js` → `node tests/content.test.js` → `python3 build.py` → `node tests/ui/smoke.js`. Vaata ekraanipildid üle (laius 1440 hele, 390 tume): konsoolis vigu ei ole, horisontaalset kerimist ei ole.
 4. Uus andmeallikas → kirje `src/sources.js` `SRC`-i (periood, hankimise kuupäev, detailsus, arvutusviis, piirang) ja `data/dictionary.json`-i.
 5. Sisuline otsus → `docs/otsused.md` (kuupäev, otsus, otsustaja). Hoia `README.md` ja `docs/uleandmine.md` ajakohased.
